@@ -1,0 +1,12 @@
+# tornado-4.2
+setproctitle
+Tornado-MySQL
+redis
+hashring
+futures
+redis-py-cluster
+python-geohash
+haversine
+pymongo
+pillow
+pygments

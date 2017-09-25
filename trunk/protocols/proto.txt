@@ -1,0 +1,661 @@
+
+EC_SUCCESS = 0                                          # 成功
+EC_FREQ_LIMIT = 1                                       # 频率限制
+EC_INVALID_VERIFY_CODE = 2                              # 无效的验证码
+EC_USER_NOT_EXIST = 3                                   # 用户不存在
+EC_PET_NOT_EXIST =   4                                  # 宠物不存在
+EC_INVALID_TOKEN =  5                                   # 无效的token
+EC_USER_ALREADY_LOGINED = 6                             # 用户已经登录
+EC_USER_NOT_LOGINED = 7                                 # 用户没有登录
+EC_SYS_ERROR = 8                                        # 系统错误
+EC_UNKNOWN_ERROR = 9                                   # 未知错误
+EC_INVALID_ARGS = 10                                    # 无效的参数
+EC_ACCOUNT_FREEZED = 11                                 # 帐号被冻结
+EC_TOKEN_EXPIRED = 12                               # token超时
+EC_USER_ALREADY_REGISTERED = 20                         # 已结注册
+EC_INVALID_FILE_TYPE = 21                          # 文件类型不对
+EC_DEVICE_NOT_EXIST = 30                              #追踪器不存在
+EC_CURRENT_TIME_NOT_ALLOW = 31                      #当前时段不允许
+EC_NODATA = 32                                      #没有数据
+
+
+#MSG_CHANGE_DEVICE_BATTRY = 1 #追踪器电量改变 
+#MSG_CHANGE_DEVICE_BATTRY_CONTENT  {"battery_level":30,"waring_content":"电量过低"}
+
+--
+获取验证码
+--
+/user/get_verify_code
+    方法:           POST/GET
+    参数:           phone_num                         // 手机号
+                    type                              // 类型，取值有:
+                      1:    登录验证码
+                      2:    密码找回验证码
+                      
+    返回:           {
+                        status:状态,可能的值有:                  
+                            EC_SUCCESS
+                            EC_FREQ_LIMIT 
+                            EC_SYS_ERROR 
+                            EC_UNKNOWN_ERROR
+                            EC_INVALID_ARGS
+                            EC_USER_NOT_EXIST 
+                        remain_time:剩余秒数, status为EC_FREQ_LIMIT则会设置此值，表示用户可再次发送验证码的剩余秒数
+                        next_req_interval:下一次请求的间隔时间，以秒为单位
+                    }
+
+
+--
+登录
+--
+/user/login
+    方法:           POST/GET
+    参数:           phone_num                       // 手机号
+                    code                            // 验证码
+                    device_type                     // 设备类型，1为android， 2为ios
+                    device_token                    // 设备token
+    返回:           {
+                        status:状态, 可能的值有:
+                            EC_SUCCESS
+                            EC_USER_ALREADY_LOGINED 
+                            EC_INVALID_VERIFY_CODE 
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_INVALID_ARGS
+                            EC_ACCOUNT_FREEZED
+                            EC_USER_NOT_EXIST 
+                        token:用户token,如果status为EC_SUCCESS则此字段有效
+                        uid:用户唯一id,如果status为EC_SUCCESS则此字段有效
+                        freeze_remain_secs:如果错误代码为EC_ACCOUNT_FREEZED则此字段表示用户距离解除冻结还剩余的秒数，如果为0则表示为永久冻结
+                        token_expire_secs:token的过期时间，以秒为单位
+                    }
+
+--
+获取用户基本信息
+--
+/user/get_base_infomation
+    方法:           POST/GET
+    参数:           uid                             // 用户唯一id
+                    token                           // 用户token
+    返回:           {
+                        status:状态, 可能的值有:
+                            EC_SUCCESS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_INVALID_ARGS
+                        pet_id：宠物id,如果未绑定,返回0
+                        device_imei:硬件imei,如果未绑定,返回""
+                        wifi_bssid:home_wifi的bssid,未设置,返回""
+                        wifi_ssid：home_wifi的ssid,未设置,返回""
+                        has_reboot:绑定宠物信息后,设备是否重启过(0:未重启过,1:重启过)
+                   }
+--
+登出
+--
+/user/logout           
+    方法:           POST/GET                
+    参数:           uid                             // 用户唯一id
+                    token                           // 用户token
+    返回:           {
+                        status:状态, 可能的值有:
+                            EC_SUCCESS
+                            EC_USER_NOT_EXIST
+                            EC_USER_NOT_LOGINED
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_INVALID_ARGS
+                   }
+                   
+--
+选择wifi
+--    
+/user/set_homewifi                
+方法:           POST/GET
+参数:         uid
+              token
+              wifi_ssid:wifi名称
+              wifi_bssid:wifi mac地址(如ffffffffffff)
+              
+  返回:          {
+                      status:状态,可能的值有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                    
+                  }        
+                           
+--
+重新生成token
+--
+/user/regen_token
+    方法:           POST/GET
+    参数:           uid
+                   token
+                   device_type  // 设备类型，1为android， 2为ios
+                   device_token // 设备token
+    返回:          {
+                      status:状态,可能的值有:
+                            EC_SUCCESS
+                            EC_USER_NOT_EXIST
+                            EC_USER_NOT_LOGINED
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_INVALID_ARGS
+                      new_token:新token
+                      token_expire_secs:token的过期时间，以秒为单位
+                  }        
+
+--
+获取宠物信息
+--
+/pet/get_pet_info
+    方法:           POST/GET 
+    参数:           uid                         // 用户id
+                   token                       // token
+            pet_id                      // 可选不填为默认宠物信息
+    返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_PET_NOT_EXIST
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                        pet_id: pet id (参数中没有pet_id时返回）
+                        nick:狗昵称
+                        logo_url:头像地址
+                        logo_small_url:小图片
+                        birthday:生日
+                        sex:性别，1为男性，2为女性, 0为未知
+                        weight:体重（千克）
+                        pet_type_id: 品种类型
+                        pet_type_name :品种名称description:简介
+                   }
+                   
+                   
+--
+更新宠物信息
+--
+/pet/update_pet_info 
+    方法:           POST/GET
+    参数:           uid
+                    token
+                    pet_id
+                    imei
+                   
+                   以下参数可以多选或者单选，但是必须至少有一个:
+                   nick
+                   target_energy
+                   logo_url
+                   birthday
+                   sex
+                   weight
+                   pet_type_id
+                   description
+    返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_PET_NOT_EXIST
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SEND_CMD_FAIL
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                    }
+ 
+ 
+ --
+增加宠物信息(内部用)
+--
+/pet/add_pet_info 
+    方法:           POST/GET
+    参数:           uid
+                   token
+                   imei
+
+
+                   以下参数可以多选或者单选，但是必须至少有一个:
+                   nick
+                   target_energy
+                   logo_url
+                   logo_small_url
+                   birthday(2014-02-22)
+                   sex(1,2)
+                   weight (12)
+                   pet_type_id（1:狗  2:猫 -1 其他）
+                   description
+    返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_SEND_CMD_FAIL
+                            EC_UNKNOWN_ERROR
+                    }
+
+
+--
+获取宠物品种信息
+-- 
+/pet/get_pet_type_info
+方法:           POST/GET
+参数:         无
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                        data:[{"pet_type_name":"秋田犬","pet_type_id":1,"img_url":""}...]
+                } 
+
+                
+--
+设定运动量
+-- 
+/pet/healthy/set_sport_info    
+方法:           POST/GET
+参数:           uid
+                token
+                pet_id
+                target_step 步数
+                target_energy  卡路里
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                 }               
+
+            
+                
+--
+获取活动信息
+--
+/pet/healthy/get_activity_info
+方法:           POST/GET
+参数:           uid
+                token
+                pet_id
+                start_date //2015-04-12
+                end_date   //2015-04-12        
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                        data:[{"date":"2015-04-12","target_amount":1000,"reality_amount":300,"percentage":30}, ...]
+                 }                
+ 
+--
+获取睡眠信息
+-- 
+/pet/healthy/get_sleep_info
+方法:           POST/GET
+参数:           uid
+                token
+                pet_id
+                start_date //2015-04-12
+                end_date   //2015-04-12        
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                        data:[{"date":"2015-04-12","deep_sleep":"6.4","light_sleep":"2.4"}, ...]
+                 }  
+
+
+                 
+--
+获取健康指数
+--  
+/pet/healthy/summary
+方法:           POST/GET
+参数:           uid
+                token
+                pet_id
+返回:           {
+                        status:状态，可能的只有:
+                        
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                        activity_summary 活动总结
+                        sleep_summary    睡眠总结
+                        expert_remind    专家提醒
+                        
+                        
+                        
+                        
+                }
+
+
+--
+宠物运动或者回家
+-- 
+/pet/activity（废弃）
+方法:           POST/GET
+参数:         uid
+              token
+              pet_id
+              activity_type  1为运动，2为回家
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                 }    
+--
+宠物定位
+-- 
+/pet/location
+方法:           POST/GET
+参数:         uid
+              token
+              pet_id
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                            EC_DEVICE_NOT_EXIST
+                            EC_NODATA
+                        longitude        经度,浮点转字符串
+                        latitude         纬度,浮点转字符串
+                        location_time    时间戳
+                 } 
+
+--
+遛狗
+-- 
+/pet/walk  
+方法:           POST/GET
+参数:        uid
+             token
+             pet_id
+             walk_status  1:开始遛狗 2：回家
+             
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                 }              
+ 
+--
+找狗
+--              
+/pet/find  
+方法:           POST/GET
+参数:        uid
+            token
+            pet_id
+            find_status  1:开始找狗 2：找到了
+             
+返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                 }    
+
+ --
+ 查询宠物状态
+ --
+ /pet/get_pet_stauts
+ 方法:           POST/GET
+ 参数:       uid
+            token
+            pet_id
+            
+ 返回:           {
+                        status:状态，可能的只有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST
+                        pet_status : 0：正常  1：遛狗 2:寻狗
+                 }              
+ 
+#--
+#获取消息(暂无)
+#-- 
+#/msg/get_msg  
+#方法:           POST/GET
+#参数:        uid
+             token
+#返回:           {
+#                        status:状态，可能的只有:
+#                            EC_SUCCESS
+#                            EC_INVALID_TOKEN
+#                            EC_INVALID_ARGS
+#                            EC_SYS_ERROR
+#                            EC_UNKNOWN_ERROR:
+#                        msg_type: 1:系统消息，2：用户消息
+#                        msg_content:"json格式消息内容"
+#                 }     
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ --
+获取追踪器信息
+--
+/device/get_info
+ 方法:           POST/GET 
+    参数:           uid                         // 用户id
+                    token                       // token
+                    imei                    // imei码(string)可选不填为默认
+    返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_DEVICE_NOT_EXIST
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST("追踪器是宠物身上的，如果没有宠物就没有追踪器信息")
+                            
+                        device:设备名称
+                        imei:imei码
+                        firmware_version:固件版本 (软件版本)
+                        hardware_version:硬件版本 ( 从V开始显示，前面的不显示)
+                        battery_level:电池电量
+                        sim_deadline:sim卡过期时间
+                        iccid:sim卡iccid信息                         
+                   }
+--
+绑定设备追踪器信息
+--
+/device/add_device_info                   
+方法:           POST/GET 
+    参数:           uid                         // 用户id
+                   token                       // token
+            imei                      // imei码    
+                   device_name                     //追踪器名称                    
+    返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST("追踪器是宠物身上的，如果没有宠物就没有追踪器信息")
+                            old_account:18825180264("如果已经设备已经被绑定,返回老用户"
+                            
+                              
+                   }               
+--
+解除绑定追踪器信息
+--
+/device/remove_device_info
+ 方法:           POST/GET 
+    参数:           uid                         // 用户id
+                    token                       // token
+                    imei                      // imei码
+    返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_DEVICE_NOT_EXIST
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                            EC_PET_NOT_EXIST("追踪器是宠物身上的，如果没有宠物就没有追踪器信息")
+                                    
+                   }
+
+--
+设置sim卡信息
+--
+/device/set_sim_info
+ 方法:           POST/GET 
+    参数:           uid                         // 用户id
+                    token                       // token
+                    imei                      // imei码
+                    iccid                     //sim卡iccid信息
+                    
+ 返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_DEVICE_NOT_EXIST
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR        
+                   }
+
+
+--
+开关灯
+--
+/device/switch_light
+方法:           POST/GET 
+参数:           uid                         // 用户id
+               token                       // token
+           imei                      // imei码
+               light_status                    // 1:on 0:off
+                    
+返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_DEVICE_NOT_EXIST
+                            EC_CURRENT_TIME_NOT_ALLOW
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR        
+                   }
+
+--
+查询开关灯状态）
+--
+/device/get_light_status
+方法:           POST/GET 
+参数:           uid                         // 用户id
+               token                       // token
+               imei                      // imei码
+
+                    
+返回:           {
+                        status:状态， 可能的值有:
+                            EC_SUCCESS
+                            EC_DEVICE_NOT_EXIST
+                            EC_CURRENT_TIME_NOT_ALLOW
+                            EC_INVALID_TOKEN
+                            EC_INVALID_ARGS
+                            EC_SYS_ERROR
+                            EC_UNKNOWN_ERROR
+                        light_status     // 1:on 0:off    
+                   }
+
+
+--
+重启硬件
+--
+
+/device/reboot_device
+方法:             GET/POST
+参数:             uid
+                 token
+                 imei
+                 pet_id
+返回:            {
+                    status:状态,可能的值有:
+                        EC_SUCCESS
+                        EC_DEVICE_NOT_EXIST
+                        EC_CURRENT_TIME_NOT_ALLOW
+                        EC_INVALID_TOKEN
+                        EC_INVALID_ARGS
+                        EC_SYS_ERROR
+                        EC_UNKNOWN_ERROR
+                        EC_SEND_CMD_FAIL = 100
+                }
+--
+                  
+--
+上传宠物头像，上传参数传递请严格遵守http的form表单上传规范否则会出现错误
+--
+/file/pet/upload_logo
+    方法:           GET/POST
+    参数:          uid                     
+                   token
+                   要上传的文件相关参数
+                      
+    返回:           {
+                        status:状态,可能的值有:                  
+                            EC_SUCCESS
+                            EC_FREQ_LIMIT 
+                            EC_SYS_ERROR 
+                            EC_UNKNOWN_ERROR
+                            EC_INVALID_ARGS
+                        file_url:上传成功后文件地址url
+                    }
+                                        
+--
+获取文件
+--
+/file/get
+    方法:           GET/POST
+    参数:           type, 要获取的文件类型， 可能的选值有(注意这个选值会随着业务的发展慢慢增加):
+                      1  正常图片
+                      10  小图片
+                   file_id 文件标识
+    返回:           文件数据
+
+                     
