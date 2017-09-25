@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import threading
 import logging
 import time
@@ -322,4 +323,24 @@ class PetMongoDAO(MongoDAOBase):
             return res
 
         ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+    #设置户外wifi
+    @gen.coroutine
+    def set_outdoor_wifi(self,uid,outdoor_wifi):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"uid": uid},
+                                {"$set": {"outdoor_wifi": outdoor_wifi}})
+            return res
+        ret=yield  self.submit(_callback)
+        raise gen.Return(ret)
+    #户外开关
+    @gen.coroutine
+    def set_outdoor_on_off(self,uid,outdoor_on_off):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"uid": uid},
+                                {"$set": {"outdoor_on_off": outdoor_on_off}})
+            return res
+        ret=yield  self.submit(_callback)
         raise gen.Return(ret)

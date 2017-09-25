@@ -95,6 +95,8 @@ webapp = Application(
         (r"/user/agree_policy", handlers.AgreePolicy),
         (r"/device/get_device_status",handlers.GetPetStatusInfo),
         (r"/app/get_config",handlers.AppConfig),
+        (r"/user/set_outdoor_on_off", handlers.OutdoorOnOff),
+        (r"/user/set_outdoor_wifi", handlers.SetOutdoorWifi),
     ],
     autoreload=True,
     pyloader=pyloader,

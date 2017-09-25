@@ -40,6 +40,9 @@ _PET_INFOS_TB_ROW_DEFINE = {
     "pet_no_search_status": (0, int),#只记录遛狗和在家两种状态  方便前台关闭gps后返回之前的状态
     "pet_is_in_home": (1,int), # 1 在家  0 不在家
     "home_wifi": (None, dict),
+    "outdoor_wifi": (None, dict),  # 户外wifi
+    "outdoor_on_off": (0, int),  # 0 关闭 1 打开
+    "outdoor_in_protected": (0, int),  # 0表示不在保护范围，1表示在保护范围
     "home_location": (None,dict),
     "common_wifi": ([], list),
     "has_reboot":(0,int),

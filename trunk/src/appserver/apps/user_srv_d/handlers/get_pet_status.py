@@ -49,7 +49,7 @@ class GetPetStatusInfo(HelperHandler):
             info = yield pet_dao.get_user_pets(uid, ("pet_id",
                                                      "pet_status",
                                                      "pet_is_in_home",
-                                                     "device_status","device_imei"
+                                                     "device_status","device_imei","outdoor_in_protected","outdoor_on_off"
                                                      ))
             if not info:
                 logging.warning("GetPetStatusInfo, not found, %s",
@@ -65,6 +65,8 @@ class GetPetStatusInfo(HelperHandler):
             res["pet_status"] = info.get("pet_status",0)
             res["pet_is_in_home"]=info.get("pet_is_in_home",1)
             res["device_status"]=info.get("device_status",1)
+            res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
+            res["outdoor_on_off"]=info.get("outdoor_on_off",0)
         except Exception, e:
             logging.error("GetPetStatusInfo, error, %s %s", self.dump_req(),
                           self.dump_exp(e))
