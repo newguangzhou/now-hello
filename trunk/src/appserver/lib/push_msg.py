@@ -15,6 +15,16 @@ def new_device_on_line_msg(battery,datetime):
                     "datetime":datetime} }
     return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
+def new_pet_outdoor_in_portected_msg():
+    msg = {"type": "pet",
+           "signal": "outdoor_in_protected", }
+    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+
+def new_pet_outdoor_out_portected_msg():
+    msg = {"type": "pet",
+           "signal": "outdoor_out_protected", }
+    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+
 def new_pet_not_home_msg():
     msg = {"type": "pet",
            "signal": "not-home", }

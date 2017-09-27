@@ -262,6 +262,13 @@ def is_imei_valide(imei):
     else:
         return False
 
+def is_in_protected(outdoor_wifi,wifi_info):
+    for item in wifi_info:
+        if item["wifi_bssid"]==outdoor_wifi["wifi_bssid"]:
+            return True
+    return False
+
+
 def is_in_home(home_wifi,common_wifi,wifi_list):
     wifi_list_names = []
     #如果没有设置homewifi,直接判定在家

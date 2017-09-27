@@ -60,6 +60,14 @@ def send_message(type,message,phone):
         #超低电量
         req.sms_param = "{message:%s}" % message
         req.sms_template_code = "SMS_91825060"
+    elif type == "outdoor_in_protected":
+        #在保护范围
+        req.sms_param = "{name:%s}" % message
+        req.sms_template_code = "SMS_100230040"
+    elif type == "outdoor_out_protected":
+        #不在保护范围
+        req.sms_param = "{name:%s}" % message
+        req.sms_template_code = "SMS_100245040"
     try:
         resp = req.getResponse()
         print resp

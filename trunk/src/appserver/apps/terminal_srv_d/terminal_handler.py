@@ -224,7 +224,7 @@ class TerminalHandler:
         pk.electric_quantity = electric_quantity
 
         pet_info = yield self.pet_dao.get_pet_info(
-            ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy"),
+            ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy","outdoor_on_off","outdoor_in_protected","outdoor_wifi","pet_status"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
@@ -368,19 +368,28 @@ class TerminalHandler:
             sport_info["target_energy"] = pet_info.get("target_energy", 0)
             yield self.pet_dao.add_sport_info(pet_info["pet_id"], pk.imei,
                                               sport_info)
-
-            if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-                wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-                common_wifi = pet_info.get("common_wifi", None)
-                home_wifi = pet_info.get("home_wifi", None)
-                new_common_wifi = utils.get_new_common_wifi(
+            if pet_info.get("outdoor_on_off",0) == 1 and pet_info.get("pet_status",0)!=2 and pet_info.get("outdoor_wifi",None) is not None:
+                if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                    outdoor_wifi=pet_info.get("outdoor_wifi",None)
+                    wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
+                    is_in_protected=utils.is_in_protected(outdoor_wifi,wifi_info)
+                    self._SendOutdoorInOrOutProtected(pk.imei,is_in_protected)
+                else:
+                    #离开保护区域
+                    self._SendOutdoorInOrOutProtected(pk.imei, False)
+            else:
+                if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                    wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
+                    common_wifi = pet_info.get("common_wifi", None)
+                    home_wifi = pet_info.get("home_wifi", None)
+                    new_common_wifi = utils.get_new_common_wifi(
                     common_wifi, wifi_info, home_wifi)
-                uid = pet_info.get("uid", None)
-                if uid is not None:
-                    is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
+                    uid = pet_info.get("uid", None)
+                    if uid is not None:
+                        is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
                                                   wifi_info)
-                    self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
-                yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
+                        self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
+                    yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
                                                         new_common_wifi)
 
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
@@ -738,6 +747,70 @@ class TerminalHandler:
             sport_info["target_energy"] = pet_info.get("target_energy", 0)
             yield self.new_device_dao.add_sport_info(pk.imei, sport_info)
         raise gen.Return(True)
+    @gen.coroutine
+    def _SendOutdoorInOrOutProtected(self,imei,is_in_protected):
+        pet_info = yield self.pet_dao.get_pet_info(
+            ("pet_id", "uid", "nick",  "device_os_int", "mobile_num","outdoor_in_protected"),
+            device_imei=imei)
+        if pet_info is not None:
+            uid = pet_info.get("uid", None)
+            if uid is None:
+                logger.warning("imei:%s uid not find", imei)
+                return
+            outdoor_in_protected=pet_info.get("outdoor_in_protected",0)
+            if(outdoor_in_protected==1 and is_in_protected) or (
+                    outdoor_in_protected and not is_in_protected):
+                return
+            yield self.pet_dao.update_pet_info(
+                pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)
+            msg=push_msg.new_pet_outdoor_out_portected_msg()
+            if is_in_protected:
+                msg=push_msg.new_pet_outdoor_in_portected_msg()
+            try:
+                yield self.msg_rpc.push_android(uids=str(uid),
+                                                payload=msg,
+                                                pass_through=1)
+                # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                #                                         payload=msg)
+            except Exception, e:
+                logger.exception(e)
+            message=""
+            sms_type="outdoor_out_protected"
+            nick=pet_info.get("nick","宠物")
+            if is_in_protected:
+                message=nick+"回到户外保护范围。"
+                sms_type="outdoor_in_protected"
+            else:
+                message=nick+"脱离户外保护范围，请注意安全。"
+                sms_type="outdoor_out_protected"
+            if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
+                self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), nick)
+                return
+            try:
+                if is_in_protected:
+                    yield self.msg_rpc.push_android(uids=str(uid),
+                                                    title="小毛球智能提醒",
+                                                    desc=message,
+                                                    payload=msg,
+                                                    pass_through=0)
+                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                                                            payload=message,
+                                                            extra="outdoor_in_protected"
+                                                            )
+                else:
+                    yield self.msg_rpc.push_android(uids=str(uid),
+                                                    title="小毛球智能提醒",
+                                                    desc=message,
+                                                    payload=msg,
+                                                    pass_through=0)
+                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                                                            payload=message,
+                                                            extra="outdoor_out_protected"
+                                                            )
+            except Exception, e:
+                logger.exception(e)
+        else:
+            logger.warning("imei:%s uid not find", imei)
 
     @gen.coroutine
     def _SendPetInOrNotHomeMsg(self, imei, is_in_home):
