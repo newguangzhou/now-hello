@@ -759,7 +759,7 @@ class TerminalHandler:
                 return
             outdoor_in_protected=pet_info.get("outdoor_in_protected",0)
             if(outdoor_in_protected==1 and is_in_protected) or (
-                    outdoor_in_protected and not is_in_protected):
+                    outdoor_in_protected==0 and not is_in_protected):
                 return
             yield self.pet_dao.update_pet_info(
                 pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)

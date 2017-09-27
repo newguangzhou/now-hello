@@ -3,3 +3,10 @@ create_env_ali.sh
 docker-compose.yml
 Dockerfile
 /.idea/
+*.pyc
+*.swo
+*.swp
+*.log
+.idea/
+*.out
+*.html

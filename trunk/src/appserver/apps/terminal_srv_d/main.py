@@ -109,6 +109,8 @@ if __name__ == '__main__':
             (r"/send_commandj13", http_handlers.SendCommandHandlerJ13),
             (r"/closesocket_byimei",CloseTcp)
         ],
+        autoreload=True,
+        debug=True,
         broadcastor=broadcastor,
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,

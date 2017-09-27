@@ -264,7 +264,7 @@ def is_imei_valide(imei):
 
 def is_in_protected(outdoor_wifi,wifi_info):
     for item in wifi_info:
-        if item["wifi_bssid"]==outdoor_wifi["wifi_bssid"]:
+        if item["wifi_bssid"]==outdoor_wifi["outdoor_wifi_bssid"]:
             return True
     return False
 

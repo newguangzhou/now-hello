@@ -99,6 +99,7 @@ webapp = Application(
         (r"/user/set_outdoor_wifi", handlers.SetOutdoorWifi),
     ],
     autoreload=True,
+    debug=True,
     pyloader=pyloader,
     user_dao=UserDAO.new(mongo_meta=mongo_conf.user_mongo_meta),
     global_dao=GlobalDAO.new(mongo_meta=mongo_conf.global_mongo_meta),

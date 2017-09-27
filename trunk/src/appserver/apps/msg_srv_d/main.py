@@ -60,6 +60,7 @@ webapp = Application(
         (r"/msg/push", handlers.Push)
     ],
     autoreload=True,
+    debug=True,
     pyloader=pyloader,
     appconfig=conf,
     sms_registered=True,
