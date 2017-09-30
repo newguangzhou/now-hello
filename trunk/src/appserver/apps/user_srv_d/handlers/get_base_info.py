@@ -55,8 +55,9 @@ class GetBaseInfo(HelperHandler):
             res["outdoor_on_off"]=0
             res["outdoor_wifi_bssid"]=""
             res["outdoor_wifi_ssid"]=""
+            res["outdoor_in_protected"]=0
             info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei",
-                                                     "home_wifi","has_reboot","home_location","agree_policy","outdoor_on_off","outdoor_wifi"))
+                                                     "home_wifi","has_reboot","home_location","agree_policy","outdoor_on_off","outdoor_wifi","outdoor_in_protected"))
             if not info:
                 logging.warning("GetBaseInfo in pet dao, not found, %s", self.dump_req())
                 # device_info = yield device_dao.get_device_info_by_uid(uid,("imei",))
@@ -90,6 +91,7 @@ class GetBaseInfo(HelperHandler):
                 if outdoor_wifi is not None:
                     res["outdoor_wifi_bssid"] = outdoor_wifi["outdoor_wifi_bssid"]
                     res["outdoor_wifi_ssid"]=outdoor_wifi["outdoor_wifi_ssid"]
+                res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
 
 
         except Exception, e:

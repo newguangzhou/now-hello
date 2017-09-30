@@ -216,7 +216,7 @@ class TerminalHandler:
         electric_quantity = (int)(pk.electric_quantity)
         device_info_electric_quantity = yield self.new_device_dao.get_device_info(pk.imei, ("electric_quantity",))
         if (int)(device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) > 10 and (int)(
-                device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) < 100:
+                device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) <= 100:
             electric_quantity = (int)(device_info_electric_quantity.get("electric_quantity", 0)) - 5
         elif (int)(device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) > 10 and device_info_electric_quantity.get("electric_quantity", 0)==200:
             electric_quantity=100
