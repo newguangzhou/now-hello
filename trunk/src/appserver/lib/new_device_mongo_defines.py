@@ -23,6 +23,7 @@ DEVICE_TB_ROW_DEFINE = {
     "hardware_version": (u"", unicode),
     "software_version": (u"", unicode),
     "electric_quantity": (-1, int),
+    "app_electric_quantity": (-1, int),
     "j01_repoter_date": (None, datetime.datetime),
     "sim_deadline": (None, datetime.datetime),
     "location_data": ([], list),

@@ -330,7 +330,7 @@ class PetMongoDAO(MongoDAOBase):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             res = tb.update_one({"uid": uid},
-                                {"$set": {"outdoor_wifi": outdoor_wifi}})
+                                {"$set": {"outdoor_wifi": outdoor_wifi,"outdoor_in_protected":1}})
             return res
         ret=yield  self.submit(_callback)
         raise gen.Return(ret)

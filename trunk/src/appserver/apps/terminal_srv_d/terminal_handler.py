@@ -214,15 +214,23 @@ class TerminalHandler:
 
         # 电量突然跳零的处理
         electric_quantity = (int)(pk.electric_quantity)
-        device_info_electric_quantity = yield self.new_device_dao.get_device_info(pk.imei, ("electric_quantity",))
-        if (int)(device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) > 10 and (int)(
-                device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) <= 100:
-            electric_quantity = (int)(device_info_electric_quantity.get("electric_quantity", 0)) - 5
-        elif (int)(device_info_electric_quantity.get("electric_quantity", 0)) - (int)(electric_quantity) > 10 and device_info_electric_quantity.get("electric_quantity", 0)==200:
-            electric_quantity=100
+        device_info_electric_quantity = yield self.new_device_dao.get_device_info(pk.imei, ("electric_quantity","app_electric_quantity"))
+        old_electric_quantity=int(device_info_electric_quantity.get("electric_quantity",electric_quantity))
+        app_electric_quantity=int(device_info_electric_quantity.get("app_electric_quantity", electric_quantity))
+        if old_electric_quantity==200:
+            #充电中
+            if old_electric_quantity-electric_quantity>100:
+                app_electric_quantity=100
+            else:
+                app_electric_quantity=electric_quantity
+        else:
+            #普通电量
+            if old_electric_quantity-electric_quantity>10:
+                app_electric_quantity-=5
+            else:
+                app_electric_quantity=electric_quantity
         # 电量突然跳零的处理
-        pk.electric_quantity = electric_quantity
-
+        # pk.electric_quantity = app_electric_quantity
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy","outdoor_on_off","outdoor_in_protected","outdoor_wifi","pet_status"),
             device_imei=pk.imei)
@@ -344,6 +352,7 @@ class TerminalHandler:
             pk.imei,
             status=pk.status,
             electric_quantity=pk.electric_quantity,
+            app_electric_quantity=app_electric_quantity,
             j01_repoter_date=now_time,
             server_recv_time=time_stamp)
 

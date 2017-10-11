@@ -75,7 +75,7 @@ class GetPetStatusInfo(HelperHandler):
             return
         try:
             info = yield device_dao.get_device_info(
-                device_imei, ("electric_quantity","j01_repoter_date","battery_status"))
+                device_imei, ("electric_quantity","app_electric_quantity","j01_repoter_date","battery_status"))
             if not info:
                 logging.warning("GetPetStatusInfo, not found, %s",
                                 self.dump_req())
@@ -86,7 +86,8 @@ class GetPetStatusInfo(HelperHandler):
             if battery_last_get_time != "":
                 battery_last_get_time = utils.date2str(battery_last_get_time)
             res["battery_last_get_time"] = battery_last_get_time
-            res["battery_level"] = info.get("electric_quantity", -1)
+            electric_quantity=info.get("electric_quantity",-1)
+            res["battery_level"] = info.get("app_electric_quantity", electric_quantity)
             res["battery_status"]=info.get("battery_status",0)
         except Exception,e:
             logging.debug("GetPetStatusInfo, error %s", self.dump_req())
