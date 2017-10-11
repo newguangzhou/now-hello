@@ -357,15 +357,15 @@ class TerminalHandler:
             server_recv_time=time_stamp)
 
         battery_status = 0
-        if pk.electric_quantity < LOW_BATTERY:
+        if app_electric_quantity< LOW_BATTERY:
             battery_status = 1
-            if pk.electric_quantity < ULTRA_LOW_BATTERY:
+            if app_electric_quantity < ULTRA_LOW_BATTERY:
                 battery_status = 2
         device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
         # if device_info is not None:
         if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
             yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
-            yield self._SendBatteryMsg(pk.imei, pk.electric_quantity,
+            yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
                                        battery_status, now_time)
         if pet_info is not None:
             sport_info = {}
