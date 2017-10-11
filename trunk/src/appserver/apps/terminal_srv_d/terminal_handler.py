@@ -214,21 +214,23 @@ class TerminalHandler:
 
         # 电量突然跳零的处理
         electric_quantity = (int)(pk.electric_quantity)
+        app_electric_quantity=electric_quantity
         device_info_electric_quantity = yield self.new_device_dao.get_device_info(pk.imei, ("electric_quantity","app_electric_quantity"))
-        old_electric_quantity=int(device_info_electric_quantity.get("electric_quantity",electric_quantity))
-        app_electric_quantity=int(device_info_electric_quantity.get("app_electric_quantity", electric_quantity))
-        if old_electric_quantity==200:
-            #充电中
-            if old_electric_quantity-electric_quantity>100:
-                app_electric_quantity=100
+        if device_info_electric_quantity is not None:
+            old_electric_quantity=int(device_info_electric_quantity.get("electric_quantity",electric_quantity))
+            app_electric_quantity=int(device_info_electric_quantity.get("app_electric_quantity", electric_quantity))
+            if old_electric_quantity==200:
+                #充电中
+                if old_electric_quantity-electric_quantity>100:
+                    app_electric_quantity=200
+                else:
+                    app_electric_quantity=electric_quantity
             else:
-                app_electric_quantity=electric_quantity
-        else:
-            #普通电量
-            if old_electric_quantity-electric_quantity>10:
-                app_electric_quantity-=5
-            else:
-                app_electric_quantity=electric_quantity
+                #普通电量
+                if old_electric_quantity-electric_quantity>10:
+                    app_electric_quantity-=5
+                else:
+                    app_electric_quantity=electric_quantity
         # 电量突然跳零的处理
         # pk.electric_quantity = app_electric_quantity
         pet_info = yield self.pet_dao.get_pet_info(
