@@ -5,16 +5,26 @@ import traceback
 import os
 import importlib
 import sys
+import json
 
 
 class PyLoader:
-    def __init__(self, module):
+    def __init__(self, module,config_file_name="../config/config.json"):
         self._module = module
+        self._config_file_name = config_file_name
         self._mod_inst = None
+        self.proctitle = module
+        with open (self._config_file_name,"r") as json_file:
+            self._config_json = json.load(json_file)
+
+    def __getitem__(self, item):
+        return self._config_json.get(item,None)
 
     def ReloadInst(self, class_name, *args, **kwargs):
         inst = None
-
+        #reload config file
+        with open (self._config_file_name,"r") as json_file:
+            self._config_json = json.load(json_file)
         # First we try to reload module
         tmpmod = None
         if sys.modules.has_key(self._module):

@@ -26,22 +26,21 @@ from mipush2 import MiPush2
 from sms_dayu import send_verify,send_message
 import handlers
 
-define("debug_mode", 0, int,
+proctitle = "msg_srv_d"
+conf =  PyLoader(proctitle)
+proc_conf = conf[proctitle]
+define("debug_mode",conf["debug_mode"] , int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", 9200, int, "Listen port, default is 9200")
-define("address", "0.0.0.0", str, "Bind address, default is 127.0.0.1")
-define("console_port", 9210, int, "Console listen port, default is 9210")
+define("port", proc_conf["port"], int, "Listen port, default is 9200")
+define("address", proc_conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", proc_conf["console_port"], int, "Console listen port, default is 9210")
 
 # Parse commandline
 tornado.options.parse_command_line()
 
 # Init pyloader
-pyloader = PyLoader("config")
-conf = pyloader.ReloadInst("Config")
-
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig",
-                                       debug_mode=options.debug_mode)
+mongo_pyloder = PyLoader("configs.mongo_config")
+mongo_conf = mongo_pyloder.ReloadInst("MongoConfig2",debug_mode=options.debug_mode)
 
 # Set process title
 setproctitle.setproctitle(conf.proctitle)
@@ -61,16 +60,19 @@ webapp = Application(
     ],
     autoreload=True,
     debug=True,
-    pyloader=pyloader,
     appconfig=conf,
     sms_registered=True,
     auth_dao=AuthDAO.new(mongo_meta=mongo_conf.auth_mongo_meta),
     sms_sender=send_message,
     verify_sender=send_verify,
-    xiaomi_push2= MiPush2(conf.mipush_appsecret_android, conf.mipush_pkg_name,
-                          conf.mipush_appsecret_ios, conf.mipush_bundle_id, True),
-    xiaomi_push=MIPush(conf.mipush_host, conf.mipush_appsecret_android,
-                       conf.mipush_pkg_name))
+    xiaomi_push2= MiPush2(proc_conf["mipush_appsecret_android"],
+                          proc_conf["mipush_pkg_name"],
+                          proc_conf["mipush_appsecret_ios"],
+                          proc_conf["mipush_bundle_id"],
+                          True),
+    xiaomi_push=MIPush(proc_conf["mipush_host"],
+                       proc_conf["mipush_appsecret_android"],
+                       proc_conf["mipush_pkg_name"]))
 
 
 class _UserSrvConsole(Console):
@@ -83,8 +85,10 @@ class _UserSrvConsole(Console):
         elif len(cmd) == 1 and cmd[0] == "reload-config":
             conf = self.pyld.ReloadInst("Config")
             webapp.settings["appconfig"] = conf
-            mipush = MIPush(conf.mipush_host, conf.mipush_appsecret,
-                           conf.mipush_pkg_name)
+            proc_conf = conf[proctitle]
+            mipush = MIPush(proc_conf["mipush_host"],
+                            proc_conf["mipush_appsecret"],
+                           proc_conf["mipush_pkg_name"])
             webapp.settings["xiaomi_push"] = mipush
             self.send_response(stream, "done")
         else:

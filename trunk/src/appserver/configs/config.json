@@ -1,5 +1,6 @@
 {
   "test_mode":0,
+  "debug_mode":0,
 
   "mongodb":{
     "hosts":[
@@ -54,7 +55,11 @@
     "mipush_pkg_name" : "com.xiaomaoqiu.pet",
 
     "dayu_appkey" : "23566149",
-    "dayu_secret" : "f95d87510975317c9539d858c010f5a0"
+    "dayu_secret" : "f95d87510975317c9539d858c010f5a0",
+
+    "address":"0.0.0.0",
+    "port":9200,
+    "console_port":9210
   },
   "file_srv_d":{
 

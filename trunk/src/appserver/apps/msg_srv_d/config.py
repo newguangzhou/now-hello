@@ -2,7 +2,7 @@
 
 
 class Config:
-    def __init__(self):
+    def __init__(self,fileName):
         self.proctitle = "msg_srv_d"  # 进程名
         self.test_mode = True  # 是否为测试模式
 
@@ -18,5 +18,6 @@ class Config:
         self.mipush_appsecret_ios = "Cy4/cc5TazG663ClQpkgJg=="
         self.mipush_bundle_id = "com.xiaomaoqiu.catchpet"
         self.mipush_pkg_name = "com.xiaomaoqiu.pet"
+
         self.dayu_appkey = "23566149"
         self.dayu_secret = "f95d87510975317c9539d858c010f5a0"
