@@ -234,7 +234,9 @@ class TerminalHandler:
         # 电量突然跳零的处理
         # pk.electric_quantity = app_electric_quantity
         pet_info = yield self.pet_dao.get_pet_info(
-            ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy","outdoor_on_off","outdoor_in_protected","outdoor_wifi","pet_status"),
+            ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
+             "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
+             "pet_status","home_location"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
@@ -402,7 +404,12 @@ class TerminalHandler:
                         self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
                     yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
                                                         new_common_wifi)
-
+                elif pk.location_info.locator_status==terminal_packets.LOCATOR_STATUS_STATION:
+                    home_location=pet_info.get("home_location")
+                    if home_location is not None and len(lnglat)!=0:
+                        disance=utils.haversine(home_location.get("longitude"),home_location.get("latitude"),lnglat[0],lnglat[1])
+                        is_in_home=True if (disance<=radius*1.2) else False
+                        self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
             yield self.new_device_dao.report_wifi_info(pk.imei,
                                                        pk.location_info.mac)
