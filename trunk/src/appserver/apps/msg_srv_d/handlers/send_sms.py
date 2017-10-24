@@ -25,6 +25,8 @@ class SendSMS(xmq_web_handler.XMQWebHandler):
         
         res = {"status":error_codes.EC_SUCCESS}
         sms_sender = self.settings["sms_sender"]
+        appconfig = self.settings["appconfig"]
+
         
         # 获取请求参数
         phone_num = None 
@@ -40,7 +42,9 @@ class SendSMS(xmq_web_handler.XMQWebHandler):
             self.res_and_fini(res)
             return
         else:
-            ok = yield sms_sender(sms_type,sms,phone_num)
+            ok = yield sms_sender(sms_type,sms,phone_num,
+                                  appconfig[appconfig.proctitle]["dayu_appkey"],
+                                  appconfig[appconfig.proctitle]["dayu_secrt"])
             if not ok:
                 res = {"status": error_codes.EC_FAIL}
         # 发送成功
