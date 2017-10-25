@@ -304,3 +304,4 @@ class NewDeviceMongoDAO(MongoDAOBase):
                            sort=[("time", pymongo.ASCENDING )],
                            limit=1)
         ret = yield self.submit(_callback)
+        raise gen.Return(ret)
