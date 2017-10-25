@@ -44,3 +44,5 @@ def validate_device_infos_cols(**cols):
 
 def has_device_infos_col(colname):
     return utils.has_mongo_row_col(_DEVICE_INFOS_TB_ROW_DEFINE, colname)
+
+

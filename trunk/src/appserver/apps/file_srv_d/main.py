@@ -24,10 +24,13 @@ from lib.sys_config import SysConfig
 import handlers.user.upload_logo
 import handlers.get
 
-define("debug_mode", 0, int, "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", 9700, int, "Listen port, default is 9700")
-define("address", "0.0.0.0", str, "Bind address, default is 127.0.0.1")
-define("console_port", 9710, int, "Console listen port, default is 9710")
+proctitle = "msg_srv_d"
+conf =  PyLoader(proctitle)
+proc_conf = conf[proctitle]
+define("debug_mode",conf["debug_mode"] , int,"Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
+define("port", proc_conf["port"], int, "Listen port, default is 9700")
+define("address", proc_conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", proc_conf["console_port"], int, "Console listen port, default is 9710")
 
 # Parse commandline
 tornado.options.parse_command_line()
@@ -37,7 +40,7 @@ pyloader = PyLoader("config")
 conf = pyloader.ReloadInst("Config")
 
 mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig", debug_mode = options.debug_mode)
+mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2", debug_mode = options.debug_mode)
 
 # Set process title
 setproctitle.setproctitle(conf.proctitle)

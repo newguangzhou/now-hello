@@ -42,7 +42,7 @@ else:
 
 
 mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig", debug_mode=debug)
+mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2", debug_mode=debug)
 
 @gen.coroutine
 def _async_init():

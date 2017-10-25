@@ -121,3 +121,5 @@ class DeviceMongoDAO(MongoDAOBase):
                           upsert=True)
 
         yield self.submit(_callback)
+
+        raise gen.Return(ret)

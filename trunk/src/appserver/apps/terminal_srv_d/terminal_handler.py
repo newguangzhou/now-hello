@@ -740,6 +740,7 @@ class TerminalHandler:
         self._OnOpLog('c2s header=%s pk=%s peer=%s' % (header, str_pk, peer),
                       pk.imei)
         time_stamp = int(time.time())
+        location_info = {}
         if len(lnglat) != 0:
             location_info = {"lnglat": lnglat,
                              "locator_time": pk.location_info.locator_time,
@@ -755,6 +756,10 @@ class TerminalHandler:
             electric_quantity=pk.electric_quantity,
             server_recv_time=time_stamp
         )
+
+        yield self.new_device_dao.add_device_log(imei=pk.imei,
+                                                 calorie=pk.calorie,
+                                                 location=location_info)
 
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy"),
