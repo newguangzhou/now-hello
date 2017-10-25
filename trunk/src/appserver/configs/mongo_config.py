@@ -10,12 +10,7 @@ from lib.mongo_dao_base import MongoMeta
 class MongoConfig2:
     def __init__(self,config):
         debug_mode = config["debug_mode"]
-        self.default_meta = MongoMeta(hosts=config["mongodb"]["hosts"],
-                                      port=config["mongodb"]["port"],
-                                      username=config["mongodb"]["username"],
-                                      passwd=config["mongodb"]["password"],
-                                      repl_set_name=config["mongodb"]["repl_set_name"]
-        )
+        self.default_meta = MongoMeta(**config["mongodb"] )
         """
         通用数据的mongodb配置
         """

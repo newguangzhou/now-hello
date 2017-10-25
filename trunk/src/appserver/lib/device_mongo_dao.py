@@ -125,7 +125,6 @@ class DeviceMongoDAO(MongoDAOBase):
     @gen.coroutine
     def add_device_log(self, **kwargs):
         device_log = kwargs
-
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[device_def.DEVICE_DATABASE][
                 device_def.DEVICE_LOGS_TB]
@@ -146,3 +145,13 @@ class DeviceMongoDAO(MongoDAOBase):
             tb.insert_one(row)
 
         yield self.submit(_callback)
+    @gen.coroutine
+    def get_log_by_imei_after_time(self, imei, timestamp):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[device_def.DEVICE_DATABASE][
+                device_def.DEVICE_LOGS_TB]
+            return tb.find({"imei": imei,"time":{"$gt":timestamp}},
+                           sort=[("time", pymongo.ASCENDING )],
+                           limit=1)
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)

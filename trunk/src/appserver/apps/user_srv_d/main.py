@@ -49,7 +49,7 @@ pyloader = PyLoader("config")
 conf = pyloader.ReloadInst("Config")
 
 mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig",
+mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2",
                                        debug_mode=options.debug_mode)
 
 # Set process title
@@ -106,7 +106,6 @@ webapp = Application(
     auth_dao=AuthDAO.new(mongo_meta=mongo_conf.auth_mongo_meta),
     pet_dao=PetDAO.new(mongo_meta=mongo_conf.pet_mongo_meta),
     device_dao=NewDeviceDAO.new(mongo_meta=mongo_conf.pet_mongo_meta),
-
     appconfig=conf, )
 
 
