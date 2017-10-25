@@ -296,11 +296,15 @@ class NewDeviceMongoDAO(MongoDAOBase):
 
         yield self.submit(_callback)
     @gen.coroutine
-    def get_log_by_imei_after_time(self, imei, timestamp):
+    def get_log_by_imei_before_time(self, imei, timestamp):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[device_def.DEVICE_DATABASE][
                 device_def.DEVICE_LOGS_TB]
-            return tb.find({"imei": imei,"time":{"$gt":timestamp}},
-                           sort=[("time", pymongo.ASCENDING )],
+            cursor = tb.find({"imei": imei,"time":{"$lt":timestamp}},
+                           sort=[("time", pymongo.DESCENDING )],
                            limit=1)
+            if cursor.count() <= 0:
+                return None
+            return cursor
         ret = yield self.submit(_callback)
+        raise gen.Return(ret)

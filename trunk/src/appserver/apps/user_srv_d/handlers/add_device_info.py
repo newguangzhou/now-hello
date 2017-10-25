@@ -61,10 +61,16 @@ class AddDeviceInfo(HelperHandler):
             res["status"] = error_codes.EC_SEND_CMD_FAIL
             self.res_and_fini(res)
             return
-
+        bind_day = datetime.datetime.combine(
+            datetime.date.today(),datetime.time.min)
+        cur = datetime.datetime.now()
+        last_device_log = yield device_dao.get_log_by_imei_before_time(imei,cur)
+        old_calorie = 0
+        if last_device_log is not None:
+            old_calorie = last_device_log["calorie"]
         try:
             pet_id = int(time.time() * -1000)
-            bind_res = yield pet_dao.bind_device(uid, imei, pet_id)
+            bind_res = yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie)
         except pymongo.errors.DuplicateKeyError, e:
             res["status"] = error_codes.EC_EXIST
             try:

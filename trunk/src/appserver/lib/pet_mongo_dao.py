@@ -169,11 +169,11 @@ class PetMongoDAO(MongoDAOBase):
         raise gen.Return(ret)
 
     @gen.coroutine
-    def bind_device(self, uid, imei, pet_id):
+    def bind_device(self, uid, imei, pet_id,bind_day,old_calorie):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             # res = tb.insert_one({"uid": uid,"device_imei": imei,"pet_id":pet_id})
-            info={"device_imei": imei,"pet_id":pet_id}
+            info={"device_imei": imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie}
             res=tb.update_one({"uid": uid}, {"$set": info},
                        upsert=True)
             return res
