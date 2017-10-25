@@ -106,3 +106,28 @@ def validate_device_cols(**cols):
 
 def has_device_col(colname):
     return utils.has_mongo_row_col(DEVICE_TB_ROW_DEFINE, colname)
+
+DEVICE_LOGS_TB = "device_logs"
+DEVICE_LOGS_TB_INDEXES = [IndexModel("imei" ),
+                          IndexModel("time" ),
+                          ]
+_DEVICE_LOGS_TB_ROW_DEFINE = {
+    "imei": (u"", unicode),  # 追踪器全局唯一ID
+    "time": (None, datetime.datetime),
+    "calorie": (0, int),
+    "location": ([], list)
+}
+def new_device_logs_row():
+    tmp = utils.new_mongo_row(_DEVICE_lOGS_TB_ROW_DEFINE)
+    cur = datetime.datetime.today()
+    tmp["time"] = cur
+    return tmp
+
+def validate_device_logs_row(row):
+    return utils.validate_mongo_row(row, _DEVICE_LOGS_TB_ROW_DEFINE)
+
+def validate_device_logs_cols(**cols):
+    return utils.validate_mongo_row_cols(_DEVICE_LOGS_TB_ROW_DEFINE, **cols)
+
+def has_device_logs_col(colname):
+    return utils.has_mongo_row_col(_DEVICE_LOGS_TB_ROW_DEFINE, colname)
