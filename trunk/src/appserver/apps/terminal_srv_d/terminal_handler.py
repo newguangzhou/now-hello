@@ -338,19 +338,23 @@ class TerminalHandler:
             if pet_info is not None:
                 yield self.pet_dao.add_location_info(pet_info["pet_id"],
                                                      pk.imei, location_info)
-                # uid = pet_info.get("uid", None)
-                # if uid is not None:
-                #     msg = push_msg.new_location_change_msg(
-                #         "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                #         int(time.mktime(locator_time.timetuple())), radius)
-                #     try:
-                #         yield self.msg_rpc.push_android(uids=str(uid),
-                #                                         payload=msg,
-                #                                         pass_through=1)
-                #         # ios去掉推送
-                #         # yield self.msg_rpc.push_ios(uids=str(uid), payload=msg)
-                #     except Exception, e:
-                #         logger.exception(e)
+                uid = pet_info.get("uid", None)
+                if uid is not None:
+                    msg = push_msg.new_location_change_msg(
+                        "%.7f" % lnglat[1], "%.7f" % lnglat[0],
+                        int(time.mktime(locator_time.timetuple())), radius)
+                    try:
+                        yield self.msg_rpc.push_android(uids=str(uid),
+                                                        payload=msg,
+                                                        pass_through=1)
+                        #channel:0,都推送（默认）；1，apns_only；2：connection_only
+                        yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                                                                payload="",
+                                                                extra=msg,
+                                                                channel=2
+                                                                )
+                    except Exception, e:
+                        logger.exception(e)
         now_time = datetime.datetime.now()
         yield self.new_device_dao.update_device_info(
             pk.imei,
@@ -544,7 +548,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload="追踪器电量低，请及时充电！",
-                                                            extra="low_battery"
+                                                            extra={"type":"low_battery"}
                                                             )
                 elif battery_statue == 2:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -554,7 +558,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload="追踪器电量超低，请及时充电！",
-                                                            extra="superlow_battery"
+                                                            extra={"type":"superlow_battery"}
                                                             )
 
 
@@ -813,7 +817,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra="outdoor_in_protected"
+                                                            extra={"type":"outdoor_in_protected"}
                                                             )
                 else:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -823,7 +827,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra="outdoor_out_protected"
+                                                            extra={"type":"outdoor_out_protected"}
                                                             )
             except Exception, e:
                 logger.exception(e)
@@ -882,7 +886,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra="in_home"
+                                                            extra={"type":"in_home"}
                                                             )
                 else:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -892,7 +896,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra="out_home"
+                                                            extra={"type":"out_home"}
                                                             )
 
 

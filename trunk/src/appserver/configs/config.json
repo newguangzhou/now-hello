@@ -1,6 +1,6 @@
 {
   "test_mode":0,
-  "debug_mode":0,
+  "debug_mode":1,
 
   "mongodb":{
     "hosts":[
@@ -31,7 +31,7 @@
   "user_srv_d":{
     "address":"0.0.0.0",
     "port":9100,
-    "console_port":9110,
+    "console_port":9110
 
   },
   "terminal_srv_d":{
@@ -49,10 +49,15 @@
 
     "default_push_title" : "小毛球",
     "mipush_host" : "api.xmpush.xiaomi.com",
-    "mipush_appsecret_android" : "aQLLX8h129sPKm3NeY9lcA::",
-    "mipush_appsecret_ios" : "Cy4/cc5TazG663ClQpkgJg::",
+    "mipush_appsecret_android" : "aQLLX8h129sPKm3NeY9lcA==",
+    "mipush_appsecret_ios" : "Cy4/cc5TazG663ClQpkgJg==",
     "mipush_bundle_id" : "com.xiaomaoqiu.catchpet",
     "mipush_pkg_name" : "com.xiaomaoqiu.pet",
+
+    "debug_mipush_appsecret_android" : "3GmIujALN9xn3ifMlWd5AA==",
+    "debug_mipush_appsecret_ios" : "6xt9bXXLdI+Hx3POZWFEkw==",
+    "debug_mipush_bundle_id" : "com.xiaomaoqiu.catchpetbata",
+    "debug_mipush_pkg_name" : "com.xiaomaoqiu.debug",
 
     "dayu_appkey" : "23566149",
     "dayu_secret" : "f95d87510975317c9539d858c010f5a0",

@@ -48,6 +48,18 @@ setproctitle.setproctitle(conf.proctitle)
 # # Init sms
 # sms_sender = NEXMOSMS(pyloader)
 
+# Init xiaomi_push
+debug_mode=conf["debug_mode"]
+if debug_mode == 0:
+    xiaomi_push2=MiPush2(proc_conf["mipush_appsecret_android"],
+                          proc_conf["mipush_pkg_name"],
+                          proc_conf["mipush_appsecret_ios"],
+                          proc_conf["mipush_bundle_id"])
+else:
+    xiaomi_push2=MiPush2(proc_conf["debug_mipush_appsecret_android"],
+                          proc_conf["debug_mipush_pkg_name"],
+                          proc_conf["debug_mipush_appsecret_ios"],
+                          proc_conf["debug_mipush_bundle_id"])
 # Init web application
 webapp = Application(
     [
@@ -56,7 +68,6 @@ webapp = Application(
         (r"/msg/push_android", handlers.PushAndrod),
         (r"/msg/push_all", handlers.PushAll),
         (r"/msg/push_ios", handlers.PushIOS),
-        (r"/msg/push", handlers.Push)
     ],
     autoreload=True,
     debug=True,
@@ -65,14 +76,7 @@ webapp = Application(
     auth_dao=AuthDAO.new(mongo_meta=mongo_conf.auth_mongo_meta),
     sms_sender=send_message,
     verify_sender=send_verify,
-    xiaomi_push2= MiPush2(proc_conf["mipush_appsecret_android"],
-                          proc_conf["mipush_pkg_name"],
-                          proc_conf["mipush_appsecret_ios"],
-                          proc_conf["mipush_bundle_id"],
-                          True),
-    xiaomi_push=MIPush(proc_conf["mipush_host"],
-                       proc_conf["mipush_appsecret_android"],
-                       proc_conf["mipush_pkg_name"]))
+    xiaomi_push2= xiaomi_push2)
 
 
 class _UserSrvConsole(Console):

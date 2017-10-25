@@ -12,14 +12,13 @@ from base.APIConstants import Constants
 
 
 class MiPush2:
-    def __init__(self, appsecret_android, app_pkg_name, appsecret_ios, bundle_id, debug_mode):
+    def __init__(self, appsecret_android, app_pkg_name, appsecret_ios, bundle_id):
         # Constants.use_official()
         # Constants.use_sandbox()
         self._appsecret_android = appsecret_android
         self._appsecret_ios = appsecret_ios
         self._bundle_id = bundle_id
         self._app_pkg_name = app_pkg_name
-        self._debug_mode = debug_mode
         self._sender_android = APISender(self._appsecret_android)
         self._sender_ios = APISender(self._appsecret_ios)
 
@@ -68,10 +67,14 @@ class MiPush2:
     def send_to_useraccount_ios(self,
                               str_uids,
                                 payload,
-                                extra):
+                                extra, channel=0):
         message = PushMessage().description(payload).sound_url(
             "default").badge(0).category(
             "action").title("test_title").extra(extra)
+        if channel==1:
+            message=message.apns_only()
+        elif channel==2:
+            message=message.connection_only()
         # recv = self._sender1.send_to_alias(message.message_dict_ios(), str_uids)
         logging.debug("ios_push_useraccount_message:%s" % message.message_dict_ios())
         recv = self._sender_ios.send_to_user_account(message.message_dict_ios(), str_uids)
