@@ -121,3 +121,28 @@ class DeviceMongoDAO(MongoDAOBase):
                           upsert=True)
 
         yield self.submit(_callback)
+
+    @gen.coroutine
+    def add_device_log(self, **kwargs):
+        device_log = kwargs
+
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[device_def.DEVICE_DATABASE][
+                device_def.DEVICE_LOGS_TB]
+
+            row = device_def.new_device_logs_row()
+            for (k, v) in device_log.items():
+                if row.has_key(k):
+                    row[k] = v
+                else:
+                    raise DeviceMongoDAOException(
+                        "Unknwon device log row column \"%s\"", k)
+
+            validate_ret, exp_col = device_def.validate_device_logs_row(row)
+            if not validate_ret:
+                raise DeviceMongoDAOException(
+                    "Validate device log row failed, invalid column \"%s\"",
+                    exp_col)
+            tb.insert_one(row)
+
+        yield self.submit(_callback)
