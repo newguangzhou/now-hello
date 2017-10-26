@@ -31,9 +31,9 @@ from lib.msg_rpc import MsgRPC
 from lib.sys_config import SysConfig
 from lib import sys_config
 from configs.mongo_config import MongoConfig2
-
+import lib.config
 support_setptitle = True
-ptitle = "terminal_srv_d"
+proctitle = "terminal_srv_d"
 verbose = False
 logrootdir = "./logs/"
 listen_port = 5050
@@ -45,21 +45,14 @@ except:
     support_setptitle = False
 
 import logging
-import json
 
 logger = logging.getLogger(__name__)
-config_file_name="../../configs/config.json"
-with open(config_file_name, "r") as json_file:
-    config_json = json.load(json_file)
 
-debug_mode=config_json["debug_mode"]
-if debug_mode==0:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["release"])
-else:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["debug"])
+conf =  loadJsonConfig()
+proc_conf = conf[proctitle]
 
-# mongo_pyloader = PyLoader("configs.mongo_config")
-# mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2", debug_mode=debug)
+debug_mode=conf["debug_mode"]
+mongo_conf = MongoConfig2(conf["mongodb"])
 
 # Parse options
 #def Usage():
@@ -67,7 +60,7 @@ else:
 
 # Set process title
 if support_setptitle:
-    setproctitle.setproctitle(ptitle)
+    setproctitle.setproctitle(proctitle)
 else:
     logger.warning(
         "System not support python setproctitle module, please check!!!")

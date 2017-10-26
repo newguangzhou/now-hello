@@ -15,8 +15,6 @@ import tornado.options
 from tornado.options import define, options
 
 from lib.console import Console
-from lib.pyloader import PyLoader
-
 from lib.auth_dao import AuthDAO
 
 from sms_ymrt import YMRTSMS
@@ -26,10 +24,10 @@ from mipush2 import MiPush2
 from sms_dayu import send_verify,send_message
 import handlers
 from configs.mongo_config import MongoConfig2
-import json
+import lib.config
 
 proctitle = "msg_srv_d"
-conf =  PyLoader(proctitle)
+conf =  loadJsonConfig()
 proc_conf = conf[proctitle]
 define("debug_mode",conf["debug_mode"] , int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
@@ -51,24 +49,9 @@ setproctitle.setproctitle(conf.proctitle)
 # sms_sender = NEXMOSMS(pyloader)
 
 # Init xiaomi_push
-config_file_name="../../configs/config.json"
-with open(config_file_name, "r") as json_file:
-    config_json = json.load(json_file)
-
-debug_mode=config_json["debug_mode"]
-# debug_mode=conf["debug_mode"]
-if debug_mode == 0:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["release"])
-    xiaomi_push2=MiPush2(proc_conf["mipush_appsecret_android"],
-                          proc_conf["mipush_pkg_name"],
-                          proc_conf["mipush_appsecret_ios"],
-                          proc_conf["mipush_bundle_id"])
-else:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["debug"])
-    xiaomi_push2=MiPush2(proc_conf["debug_mipush_appsecret_android"],
-                          proc_conf["debug_mipush_pkg_name"],
-                          proc_conf["debug_mipush_appsecret_ios"],
-                          proc_conf["debug_mipush_bundle_id"])
+debug_mode=conf["debug_mode"]
+mongo_conf = MongoConfig2(conf["mongodb"])
+xiaomi_push2=MiPush2(**proc_conf)
 # Init web application
 webapp = Application(
     [

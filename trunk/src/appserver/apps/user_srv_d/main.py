@@ -36,32 +36,22 @@ except:
     support_setptitle = False
 
 import handlers
-
-define("debug_mode", 0, int,
+import lib.config
+proctitle = "user_srv_d"
+conf = loadJsonConfig()
+proc_conf = conf[proctitle]
+debug_mode=conf["debug_mode"]
+define("debug_mode", conf["debug_mode"], int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", 9100, int, "Listen port, default is 9100")
-define("address", "0.0.0.0", str, "Bind address, default is 127.0.0.1")
-define("console_port", 9110, int, "Console listen port, default is 9110")
+define("port", conf["port"], int, "Listen port, default is 9100")
+define("address", conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", conf["console_port"], int, "Console listen port, default is 9110")
 
 # Parse commandline
 tornado.options.parse_command_line()
 
 # Init pyloader
-pyloader = PyLoader("config")
-conf = pyloader.ReloadInst("Config")
-
-# mongo_pyloader = PyLoader("configs.mongo_config")
-# mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2",
-#                                        debug_mode=options.debug_mode)
-config_file_name="../../configs/config.json"
-with open(config_file_name, "r") as json_file:
-    config_json = json.load(json_file)
-
-debug_mode=config_json["debug_mode"]
-if debug_mode==0:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["release"])
-else:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["debug"])
+mongo_conf = MongoConfig2(conf["mongodb"])
 
 
 # Set process title

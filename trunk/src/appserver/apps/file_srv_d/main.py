@@ -14,10 +14,7 @@ from tornado.web import Application, url
 import tornado.options
 from tornado.options import define, options
 
-import json
-
 from lib.console import Console
-from lib.pyloader import PyLoader
 from lib.auth_dao import AuthDAO
 from lib.files_dao import FilesDAO
 from lib.user_dao import UserDAO
@@ -27,9 +24,9 @@ from configs.mongo_config import MongoConfig2
 
 import handlers.user.upload_logo
 import handlers.get
-
+import lib.config
 proctitle = "file_srv_d"
-conf =  PyLoader(proctitle)
+conf =  loadJsonConfig()
 proc_conf = conf[proctitle]
 define("debug_mode",conf["debug_mode"] , int,"Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
 define("port", proc_conf["port"], int, "Listen port, default is 9700")
@@ -39,21 +36,8 @@ define("console_port", proc_conf["console_port"], int, "Console listen port, def
 # Parse commandline
 tornado.options.parse_command_line()
 
-# Init pyloader
-pyloader = PyLoader("config")
-conf = pyloader.ReloadInst("Config")
-
-# mongo_pyloader = PyLoader("configs.mongo_config")
-# mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2", debug_mode = options.debug_mode)
-config_file_name="../../configs/config.json"
-with open(config_file_name, "r") as json_file:
-    config_json = json.load(json_file)
-
-debug_mode=config_json["debug_mode"]
-if debug_mode==0:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["release"])
-else:
-    mongo_conf = MongoConfig2(config_json["mongodb"]["debug"])
+debug_mode=conf["debug_mode"]
+mongo_conf = MongoConfig2(conf["mongodb"])
 
 # Set process title
 setproctitle.setproctitle(conf.proctitle)

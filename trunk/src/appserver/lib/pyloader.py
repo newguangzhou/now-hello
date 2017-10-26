@@ -8,6 +8,9 @@ import sys
 import json
 
 
+
+
+
 class PyLoader:
     def __init__(self, module,config_file_name="../../configs/config.json"):
         self._module = module
@@ -18,6 +21,8 @@ class PyLoader:
             self._config_json = json.load(json_file)
 
     def __getitem__(self, item):
+        if item == "" :
+            return self._config_json
         return self._config_json.get(item,None)
 
     def ReloadInst(self, class_name, *args, **kwargs):
