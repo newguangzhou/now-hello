@@ -12,7 +12,7 @@ from tornado.web import Application, url
 
 import tornado.options
 from tornado.options import define, options
-
+import json
 from lib.console import Console
 from lib.pyloader import PyLoader
 from lib.auth_dao import AuthDAO
@@ -27,6 +27,8 @@ from lib.new_device_dao import NewDeviceDAO
 from lib.gid_rpc import GIDRPC
 from lib.msg_rpc import MsgRPC
 from lib.terminal_rpc import TerminalRPC
+from configs.mongo_config import MongoConfig2
+
 support_setptitle = True
 try:
     import setproctitle
@@ -48,9 +50,19 @@ tornado.options.parse_command_line()
 pyloader = PyLoader("config")
 conf = pyloader.ReloadInst("Config")
 
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2",
-                                       debug_mode=options.debug_mode)
+# mongo_pyloader = PyLoader("configs.mongo_config")
+# mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2",
+#                                        debug_mode=options.debug_mode)
+config_file_name="../../configs/config.json"
+with open(config_file_name, "r") as json_file:
+    config_json = json.load(json_file)
+
+debug_mode=config_json["debug_mode"]
+if debug_mode==0:
+    mongo_conf = MongoConfig2(config_json["mongodb"]["release"])
+else:
+    mongo_conf = MongoConfig2(config_json["mongodb"]["debug"])
+
 
 # Set process title
 if support_setptitle:

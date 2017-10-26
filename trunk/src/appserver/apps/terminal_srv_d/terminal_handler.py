@@ -349,7 +349,7 @@ class TerminalHandler:
                                                         pass_through=1)
                         #channel:0,都推送（默认）；1，apns_only；2：connection_only
                         yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
-                                                                payload="",
+                                                                payload="xmq",
                                                                 extra=msg,
                                                                 channel=2
                                                                 )

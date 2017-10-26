@@ -9,7 +9,7 @@ import json
 
 
 class PyLoader:
-    def __init__(self, module,config_file_name="../config/config.json"):
+    def __init__(self, module,config_file_name="../../configs/config.json"):
         self._module = module
         self._config_file_name = config_file_name
         self._mod_inst = None

@@ -9,8 +9,7 @@ from lib.mongo_dao_base import MongoMeta
 """
 class MongoConfig2:
     def __init__(self,config):
-        debug_mode = config["debug_mode"]
-        self.default_meta = MongoMeta(**config["mongodb"] )
+        self.default_meta = MongoMeta(**config)
         """
         通用数据的mongodb配置
         """

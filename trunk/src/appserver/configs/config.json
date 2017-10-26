@@ -1,73 +1,91 @@
 {
-  "test_mode":0,
-  "debug_mode":1,
+  "test_mode": 0,
+  "debug_mode": 1,
+  "mongodb": {
+    "debug": {
+      "hosts": "120.24.152.121",
+      "port": 27020,
+      "username": "root",
+      "passwd": "mgdb8w34asdadat51!((",
+      "repl_set_name": "mongo_shard1"
+    },
+    "release": {
+      "hosts": "120.24.152.121",
+      "port": 27020,
+      "username": "root",
+      "passwd": "mgdb8w34asdadat51!((",
+      "repl_set_name": "mongo_shard1"
+    },
 
-  "mongodb":{
-    "hosts":[
+    "hosts": [
       "127.0.0.1:27018",
       "127.0.0.1:27019",
       "127.0.0.1:27020"
     ],
     "default_meta": {
-      "hosts":
-      "120.24.152.121",
-      "port":27020,
-      "username":"root",
-      "passwd":"mgdb8w34asdadat51!((",
-      "repl_set_name":"mongo_shard1"
+      "hosts": "120.24.152.121",
+      "port": 27020,
+      "username": "root",
+      "passwd": "mgdb8w34asdadat51!((",
+      "repl_set_name": "mongo_shard1"
     }
   },
   "phone_num_for_test": [
-    18565353866,18520120830,18825180264,
-    18925146492,15622286095,18688416599,
-    13751783082,13751775599 ,13560487757,
-    15218133828,18122440271,
-    188251802640000,181224402710000,156222860950000,
-    185653538660000,186884165990000,137112290140000,
-    181027350220000],
-  "log":{
-
+    18565353866,
+    18520120830,
+    18825180264,
+    18925146492,
+    15622286095,
+    18688416599,
+    13751783082,
+    13751775599,
+    13560487757,
+    15218133828,
+    18122440271,
+    188251802640000,
+    181224402710000,
+    156222860950000,
+    185653538660000,
+    186884165990000,
+    137112290140000,
+    181027350220000
+  ],
+  "log": {
   },
-  "user_srv_d":{
-    "address":"0.0.0.0",
-    "port":9100,
-    "console_port":9110
-
+  "user_srv_d": {
+    "address": "127.0.0.1",
+    "port": 9100,
+    "console_port": 9110
   },
-  "terminal_srv_d":{
+  "terminal_srv_d": {
   },
-  "srv_d":{
-
+  "srv_d": {
   },
-  "msg_srv_d":{
-    "comment_ymrt":"亿美软通的cdkey",
-    "ymrt_cdkey" : "6SDK-EMY-6688-KKVUN",
-    "ymrt_passwd": "066884" ,
-
-    "nexmo_key" : "c898a8a3",
-    "nexmo_secret" : "d5c75dc8",
-
-    "default_push_title" : "小毛球",
-    "mipush_host" : "api.xmpush.xiaomi.com",
-    "mipush_appsecret_android" : "aQLLX8h129sPKm3NeY9lcA==",
-    "mipush_appsecret_ios" : "Cy4/cc5TazG663ClQpkgJg==",
-    "mipush_bundle_id" : "com.xiaomaoqiu.catchpet",
-    "mipush_pkg_name" : "com.xiaomaoqiu.pet",
-
-    "debug_mipush_appsecret_android" : "3GmIujALN9xn3ifMlWd5AA==",
-    "debug_mipush_appsecret_ios" : "6xt9bXXLdI+Hx3POZWFEkw==",
-    "debug_mipush_bundle_id" : "com.xiaomaoqiu.catchpetbata",
-    "debug_mipush_pkg_name" : "com.xiaomaoqiu.debug",
-
-    "dayu_appkey" : "23566149",
-    "dayu_secret" : "f95d87510975317c9539d858c010f5a0",
-
-    "address":"0.0.0.0",
-    "port":9200,
-    "console_port":9210
+  "msg_srv_d": {
+    "comment_ymrt": "亿美软通的cdkey",
+    "ymrt_cdkey": "6SDK-EMY-6688-KKVUN",
+    "ymrt_passwd": "066884",
+    "nexmo_key": "c898a8a3",
+    "nexmo_secret": "d5c75dc8",
+    "default_push_title": "小毛球",
+    "mipush_host": "api.xmpush.xiaomi.com",
+    "mipush_appsecret_android": "aQLLX8h129sPKm3NeY9lcA==",
+    "mipush_appsecret_ios": "Cy4/cc5TazG663ClQpkgJg==",
+    "mipush_bundle_id": "com.xiaomaoqiu.catchpet",
+    "mipush_pkg_name": "com.xiaomaoqiu.pet",
+    "debug_mipush_appsecret_android": "3GmIujALN9xn3ifMlWd5AA==",
+    "debug_mipush_appsecret_ios": "6xt9bXXLdI+Hx3POZWFEkw==",
+    "debug_mipush_bundle_id": "com.xiaomaoqiu.catchpetbata",
+    "debug_mipush_pkg_name": "com.xiaomaoqiu.debug",
+    "dayu_appkey": "23566149",
+    "dayu_secret": "f95d87510975317c9539d858c010f5a0",
+    "address": "127.0.0.1",
+    "port": 9200,
+    "console_port": 9210
   },
-  "file_srv_d":{
-
+  "file_srv_d": {
+     "address": "127.0.0.1",
+    "port": 9700,
+    "console_port": 9710
   }
-
 }

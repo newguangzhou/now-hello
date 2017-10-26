@@ -30,6 +30,7 @@ from test_handler import CloseTcp
 from lib.msg_rpc import MsgRPC
 from lib.sys_config import SysConfig
 from lib import sys_config
+from configs.mongo_config import MongoConfig2
 
 support_setptitle = True
 ptitle = "terminal_srv_d"
@@ -44,10 +45,21 @@ except:
     support_setptitle = False
 
 import logging
+import json
 
 logger = logging.getLogger(__name__)
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2", debug_mode=debug)
+config_file_name="../../configs/config.json"
+with open(config_file_name, "r") as json_file:
+    config_json = json.load(json_file)
+
+debug_mode=config_json["debug_mode"]
+if debug_mode==0:
+    mongo_conf = MongoConfig2(config_json["mongodb"]["release"])
+else:
+    mongo_conf = MongoConfig2(config_json["mongodb"]["debug"])
+
+# mongo_pyloader = PyLoader("configs.mongo_config")
+# mongo_conf = mongo_pyloader.ReloadInst("MongoConfig2", debug_mode=debug)
 
 # Parse options
 #def Usage():
