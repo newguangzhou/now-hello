@@ -12,7 +12,6 @@ from tornado.web import Application, url
 
 import tornado.options
 from tornado.options import define, options
-import json
 from lib.console import Console
 from lib.auth_dao import AuthDAO
 from lib.user_dao import UserDAO
@@ -41,9 +40,9 @@ proc_conf = conf[proctitle]
 debug_mode=conf["debug_mode"]
 define("debug_mode", conf["debug_mode"], int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", conf["port"], int, "Listen port, default is 9100")
-define("address", conf["address"], str, "Bind address, default is 127.0.0.1")
-define("console_port", conf["console_port"], int, "Console listen port, default is 9110")
+define("port", proc_conf["port"], int, "Listen port, default is 9100")
+define("address", proc_conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", proc_conf["console_port"], int, "Console listen port, default is 9110")
 
 # Parse commandline
 tornado.options.parse_command_line()
