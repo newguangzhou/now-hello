@@ -24,10 +24,10 @@ from mipush2 import MiPush2
 from sms_dayu import send_verify,send_message
 import handlers
 from configs.mongo_config import MongoConfig2
-import lib.config
+from lib.config import *
 
 proctitle = "msg_srv_d"
-conf =  loadJsonConfig()
+conf =loadJsonConfig()
 proc_conf = conf[proctitle]
 define("debug_mode",conf["debug_mode"] , int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
@@ -40,7 +40,7 @@ tornado.options.parse_command_line()
 
 # # Init pyloader
 # Set process title
-setproctitle.setproctitle(conf.proctitle)
+setproctitle.setproctitle(proctitle)
 
 # # Init sms
 # sms_sender = NEXMOSMS(pyloader)

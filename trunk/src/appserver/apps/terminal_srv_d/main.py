@@ -31,7 +31,7 @@ from lib.msg_rpc import MsgRPC
 from lib.sys_config import SysConfig
 from lib import sys_config
 from configs.mongo_config import MongoConfig2
-import lib.config
+from lib.config import *
 support_setptitle = True
 proctitle = "terminal_srv_d"
 verbose = False

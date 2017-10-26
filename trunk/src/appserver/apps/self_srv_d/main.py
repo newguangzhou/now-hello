@@ -9,12 +9,10 @@ from tornado.web import Application
 
 import tornado.options
 
-from lib.pyloader import PyLoader
 from lib.op_log_dao import OPLogDAO
 from lib.sys_config import SysConfig
-import lib.config
 from tornado.ioloop import IOLoop
-
+from lib.config import *
 from lib import utils
 from configs.mongo_config import MongoConfig2
 

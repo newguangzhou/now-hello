@@ -14,7 +14,6 @@ import tornado.options
 from tornado.options import define, options
 import json
 from lib.console import Console
-from lib.pyloader import PyLoader
 from lib.auth_dao import AuthDAO
 from lib.user_dao import UserDAO
 from lib.pet_dao import PetDAO
@@ -28,7 +27,7 @@ from lib.gid_rpc import GIDRPC
 from lib.msg_rpc import MsgRPC
 from lib.terminal_rpc import TerminalRPC
 from configs.mongo_config import MongoConfig2
-
+from lib.config import *
 support_setptitle = True
 try:
     import setproctitle
@@ -36,7 +35,6 @@ except:
     support_setptitle = False
 
 import handlers
-import lib.config
 proctitle = "user_srv_d"
 conf = loadJsonConfig()
 proc_conf = conf[proctitle]
@@ -56,7 +54,7 @@ mongo_conf = MongoConfig2(conf["mongodb"])
 
 # Set process title
 if support_setptitle:
-    setproctitle.setproctitle(conf.proctitle)
+    setproctitle.setproctitle(proctitle)
 
 # Init web application
 webapp = Application(
@@ -102,7 +100,6 @@ webapp = Application(
     ],
     autoreload=True,
     debug=True,
-    pyloader=pyloader,
     user_dao=UserDAO.new(mongo_meta=mongo_conf.user_mongo_meta),
     global_dao=GlobalDAO.new(mongo_meta=mongo_conf.global_mongo_meta),
     auth_dao=AuthDAO.new(mongo_meta=mongo_conf.auth_mongo_meta),
@@ -119,7 +116,7 @@ class _UserSrvConsole(Console):
         elif len(cmd) == 0:
             pass
         elif len(cmd) == 1 and cmd[0] == "reload-config":
-            newconf = pyloader.ReloadInst("Config")
+            newconf = loadJsonConfig()
             webapp.settings["appconfig"] = newconf
             webapp.settings["gid_rpc"] = GIDRPC(newconf.gid_rpc_url)
             self.send_response(stream, "done")

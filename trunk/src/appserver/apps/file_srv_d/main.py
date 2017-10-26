@@ -24,7 +24,7 @@ from configs.mongo_config import MongoConfig2
 
 import handlers.user.upload_logo
 import handlers.get
-import lib.config
+from lib.config import loadJsonConfig
 proctitle = "file_srv_d"
 conf =  loadJsonConfig()
 proc_conf = conf[proctitle]
@@ -40,7 +40,7 @@ debug_mode=conf["debug_mode"]
 mongo_conf = MongoConfig2(conf["mongodb"])
 
 # Set process title
-setproctitle.setproctitle(conf.proctitle)
+setproctitle.setproctitle(proctitle)
 
 # Init web application
 webapp = Application(
@@ -49,7 +49,6 @@ webapp = Application(
          (r"/file/get", handlers.get.Get),
         ],
         autoreload = False,
-        pyloader = pyloader,
         files_dao = FilesDAO.new(mongo_meta = mongo_conf.files_mongo_meta),
         auth_dao = AuthDAO.new(mongo_meta = mongo_conf.auth_mongo_meta),
         user_dao = UserDAO.new(mongo_meta = mongo_conf.user_mongo_meta),
