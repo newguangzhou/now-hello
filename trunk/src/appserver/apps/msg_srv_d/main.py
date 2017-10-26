@@ -48,7 +48,11 @@ setproctitle.setproctitle(proctitle)
 # Init xiaomi_push
 debug_mode=conf["debug_mode"]
 mongo_conf = MongoConfig2(conf["mongodb"])
-xiaomi_push2=MiPush2(**proc_conf)
+xiaomi_push2=MiPush2(proc_conf["mipush_appsecret_android"],
+        proc_conf["mipush_pkg_name"],
+        proc_conf["mipush_appsecret_ios"],
+        proc_conf["mipush_bundle_id"]
+        )
 # Init web application
 webapp = Application(
     [
