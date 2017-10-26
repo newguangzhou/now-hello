@@ -36,9 +36,6 @@ support_setptitle = True
 proctitle = "terminal_srv_d"
 verbose = False
 logrootdir = "./logs/"
-listen_port = 5050
-debug = False
-http_listen_port = 5052
 try:
     import setproctitle
 except:
@@ -51,6 +48,9 @@ logger = logging.getLogger(__name__)
 conf =  loadJsonConfig()
 proc_conf = conf[proctitle]
 
+listen_port = proc_conf["listen_port"]
+debug = False
+http_listen_port = proc_conf["http_listen_port"]
 debug_mode=conf["debug_mode"]
 mongo_conf = MongoConfig2(conf["mongodb"])
 

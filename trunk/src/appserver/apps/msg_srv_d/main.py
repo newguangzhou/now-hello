@@ -39,9 +39,6 @@ define("console_port", proc_conf["console_port"], int, "Console listen port, def
 tornado.options.parse_command_line()
 
 # # Init pyloader
-# mongo_pyloder = PyLoader("configs.mongo_config")
-# mongo_conf = mongo_pyloder.ReloadInst("MongoConfig2",debug_mode=options.debug_mode)
-
 # Set process title
 setproctitle.setproctitle(conf.proctitle)
 
