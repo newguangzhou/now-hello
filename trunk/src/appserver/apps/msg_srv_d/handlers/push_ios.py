@@ -36,11 +36,17 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
             payload = self.get_str_arg("payload")
             extra=self.get_str_arg("extra")
             push_type = self.get_argument("push_type", "alias")
-            channel=self.get_argument("channel")
+            channel=0
+            try:
+                channel=int(self.get_argument("channel"))
+            except Exception, e:
+                logging.warning("PushIOS, invalid args, %s %s", self.dump_req(),
+                                self.dump_exp(e))
+
             if push_type == "alias":
                 yield self.send_to_alias_ios(uids, desc, payload)
             elif push_type == "user_account":
-                yield self.send_to_useraccount_ios(uids,payload, eval(extra),int(channel) if channel is not None else 0)
+                yield self.send_to_useraccount_ios(uids,payload, eval(extra),channel)
 
         self.res_and_fini(res)
         return

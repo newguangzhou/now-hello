@@ -348,6 +348,9 @@ class TerminalHandler:
                                                         payload=msg,
                                                         pass_through=1)
                         #channel:0,都推送（默认）；1，apns_only；2：connection_only
+                        msg = push_msg.ios_location_change_msg(
+                            "%.7f" % lnglat[1], "%.7f" % lnglat[0],
+                            int(time.mktime(locator_time.timetuple())), radius)
                         yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                                 payload="xmq",
                                                                 extra=msg,
@@ -411,7 +414,7 @@ class TerminalHandler:
                 elif pk.location_info.locator_status==terminal_packets.LOCATOR_STATUS_STATION:
                     home_location=pet_info.get("home_location")
                     if home_location is not None and len(lnglat)!=0:
-                        disance=utils.haversine(home_location.get("longitude"),home_location.get("latitude"),lnglat[0],lnglat[1])
+                        disance=utils.haversine(float(home_location.get("longitude")),float(home_location.get("latitude")),float(lnglat[0]),float(lnglat[1]))
                         is_in_home=True if (disance<=radius*1.2) else False
                         self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
@@ -548,7 +551,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload="追踪器电量低，请及时充电！",
-                                                            extra={"type":"low_battery"}
+                                                            extra=push_msg.extra({"type":"low_battery"})
                                                             )
                 elif battery_statue == 2:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -558,7 +561,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload="追踪器电量超低，请及时充电！",
-                                                            extra={"type":"superlow_battery"}
+                                                            extra=push_msg.extra({"type":"superlow_battery"})
                                                             )
 
 
@@ -822,7 +825,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra={"type":"outdoor_in_protected"}
+                                                            extra=push_msg.extra({"type":"outdoor_in_protected"})
                                                             )
                 else:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -832,7 +835,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra={"type":"outdoor_out_protected"}
+                                                            extra=push_msg.extra({"type":"outdoor_out_protected"})
                                                             )
             except Exception, e:
                 logger.exception(e)
@@ -891,7 +894,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra={"type":"in_home"}
+                                                            extra=push_msg.extra({"type":"in_home"})
                                                             )
                 else:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -901,7 +904,7 @@ class TerminalHandler:
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                             payload=message,
-                                                            extra={"type":"out_home"}
+                                                            extra=push_msg.extra({"type":"out_home"})
                                                             )
 
 

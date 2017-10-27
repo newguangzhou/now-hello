@@ -133,8 +133,8 @@ class SendCommandHandler3(tornado.web.RequestHandler):
         ret_str = "send ok" if ret else "send fail"
         self._OnOpLog("s2c send_data:%s ret:%s" % (send_data, ret_str), imei)
         self.write(ret_str)
-        unreply_msg_mgr = self.settings["unreply_msg_mgr"]
-        unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, command_num)
+        # unreply_msg_mgr = self.settings["unreply_msg_mgr"]
+        # unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, command_num)
 
     def _OnOpLog(self, content, imei):
         logger.info("content:%s imei:%s", content, imei)
@@ -269,9 +269,9 @@ class SendCommandHandlerJ03(tornado.web.RequestHandler):
         ret_str = "send ok" if ret else "send fail"
         self._OnOpLog("s2c send_data:%s ret:%s" % (send_data, ret_str), imei)
         self.write(ret_str)
-        unreply_msg_mgr = self.settings["unreply_msg_mgr"]
-        msg_type = content[0:3]
-        unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, msg_type)
+        # unreply_msg_mgr = self.settings["unreply_msg_mgr"]
+        # msg_type = content[0:3]
+        # unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, msg_type)
 
     def _OnOpLog(self, content, imei):
         logger.info("content:%s imei:%s", content, imei)
