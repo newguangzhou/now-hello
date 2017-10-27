@@ -9,6 +9,7 @@ import time
 from tornado.web import asynchronous
 from tornado import gen
 from helper_handler import HelperHandler
+from lib.type_defines  import *
 
 
 class PetLocation(HelperHandler):
@@ -56,8 +57,8 @@ class PetLocation(HelperHandler):
                 self.res_and_fini(res)
                 return
             else:
-                # if info.get("pet_status",0) != 2:
-                terminal_rpc.send_j13(imei)
+                if info.get("pet_status",0) != PETSTATUS_FINDING:
+                    terminal_rpc.send_j13(imei)
 
             res_info = yield pet_dao.get_location_infos(pet_id)
             if res_info is not None:

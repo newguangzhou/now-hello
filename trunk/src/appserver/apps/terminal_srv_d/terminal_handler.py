@@ -13,13 +13,14 @@ from terminal_base import terminal_proto, terminal_commands, terminal_packets, u
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
+from lib.type_defines import *
 
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
 logger = logging.getLogger(__name__)
 
 from lib import utils
 from lib import push_msg
-
+from lib import terminal_rpc
 LOW_BATTERY = 25
 ULTRA_LOW_BATTERY = 15
 
@@ -58,6 +59,15 @@ class TerminalHandler:
         # self.terminal_proto_ios = {}
 
         self.terminal_proto_guarder = {}
+
+    @gen.coroutine()
+    def setGPS(self,imei,gps_switch):
+        msg = terminal_commands.Params()
+        msg.gps_enable = gps_switch
+
+        get_res = terminal_rpc.send_command_params(
+            imei=imei, command_content=str(msg))
+        raise gen.Return(get_res)
 
     def OnOpen(self, conn_id):
         conn = self.conn_mgr.GetConn(conn_id)
@@ -378,6 +388,7 @@ class TerminalHandler:
             yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
                                        battery_status, now_time)
+        #add sport info
         if pet_info is not None:
             sport_info = {}
             sport_info["diary"] = datetime.datetime.combine(
@@ -420,6 +431,14 @@ class TerminalHandler:
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
             yield self.new_device_dao.report_wifi_info(pk.imei,
                                                        pk.location_info.mac)
+
+        #紧急搜索模式下判断是否需要开启GPS
+        if pet_info.get("pet_status",0) == PETSTATUS_FINDING:
+            if radius > 80:
+                #定位误差>80米
+                setGPS(pk.imei, GPS_ON)
+            else:
+                setGPS(pk.imei, GPS_OFF)
 
         raise gen.Return(True)
 
