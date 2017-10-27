@@ -46,6 +46,15 @@ def new_location_change_msg(latitude, longitude, location_time, radius):
                "radius": radius
            }}
     return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+#ios推送消息
+def ios_location_change_msg(latitude, longitude, location_time, radius):
+    msg={"type": "pet",
+           "signal": "location-change",
+            "latitude": latitude,
+            "location_time": location_time,
+            "longitude": longitude,
+            "radius": radius}
+    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
 # 0 is common-battery
 # 1 is low-battery
@@ -69,3 +78,6 @@ def new_remot_login_msg():
            "data": {"remote_login_time": "2017",
                     "X_OS_Name": "xiaominote"}}
     return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+
+def extra(raw):
+    return json.dumps(raw,ensure_ascii=False, encoding="utf8")
