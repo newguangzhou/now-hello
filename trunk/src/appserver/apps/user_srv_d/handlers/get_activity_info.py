@@ -85,7 +85,8 @@ class GetActivityInfo(HelperHandler):
                     else:
                         calorie = 0
 
-                date_data["reality_amount"] ='{:.1f}'.format(utils.calorie_transform((calorie / 1000.0),weight,sex))
+                calorie_transform = utils.calorie_transform((calorie / 1000.0), weight, sex)
+                date_data["reality_amount"] ='{:.1f}'.format(calorie_transform)
                 percentage = 0
                 if date_data["target_amount"] <= 0:
                     percentage = 0
