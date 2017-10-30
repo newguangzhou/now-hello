@@ -80,7 +80,10 @@ class GetActivityInfo(HelperHandler):
                 #date_data["reality_amount"] = '{:.1f}'.format(item["calorie"] /1000)
                 calorie = item["calorie"]
                 if bind_day == item["diary"]:
-                    calorie = calorie - old_calorie
+                    if calorie >= old_calorie:
+                        calorie = calorie - old_calorie
+                    else:
+                        calorie = 0
 
                 date_data["reality_amount"] ='{:.1f}'.format(utils.calorie_transform((calorie / 1000.0),weight,sex))
                 percentage = 0
