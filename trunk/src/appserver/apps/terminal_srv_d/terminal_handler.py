@@ -60,14 +60,12 @@ class TerminalHandler:
 
         self.terminal_proto_guarder = {}
 
-    @gen.coroutine()
     def setGPS(self,imei,gps_switch):
         msg = terminal_commands.Params()
         msg.gps_enable = gps_switch
 
         get_res = terminal_rpc.send_command_params(
             imei=imei, command_content=str(msg))
-        raise gen.Return(get_res)
 
     def OnOpen(self, conn_id):
         conn = self.conn_mgr.GetConn(conn_id)
@@ -436,9 +434,9 @@ class TerminalHandler:
         if pet_info.get("pet_status",0) == PETSTATUS_FINDING:
             if radius > 80:
                 #定位误差>80米
-                setGPS(pk.imei, GPS_ON)
+                self.setGPS(pk.imei, GPS_ON)
             else:
-                setGPS(pk.imei, GPS_OFF)
+                self.setGPS(pk.imei, GPS_OFF)
 
         raise gen.Return(True)
 
