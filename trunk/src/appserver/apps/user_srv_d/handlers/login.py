@@ -58,7 +58,7 @@ class Login(HelperHandler):
             #验证码则验证
             if phone_num == "13812345678" and code == "000000":
                 logging.warn("apple review login ")
-            elif phone_num in self.appconf["phone_num_for_test"]:
+            elif phone_num in conf["phone_num_for_test"]:
                 logging.warn("we login ")
             else:
                 st = yield self.check_verify_code("OnLogin", res, 1, phone_num,
