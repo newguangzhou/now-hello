@@ -62,13 +62,9 @@ class PetFind(HelperHandler):
                 self.res_and_fini(res)
                 return
 
-            gps_enable = GPS_OFF
+            msg = terminal_commands.Params()
             if find_status == FINDSTATUS_FINDING:
                 terminal_rpc.send_j13(imei)
-                gps_enable = GPS_ON
-            msg = terminal_commands.Params()
-            msg.gps_enable = gps_enable
-            if msg.gps_enable == GPS_ON:
                 msg.report_time = 1
             else:
                 msg.report_time = 0
@@ -106,7 +102,7 @@ class PetFind(HelperHandler):
                                 self.dump_req())
                 return
             msg = terminal_commands.PetLocation()
-            if gps_enable:
+            if pet_status == PETSTATUS_FINDING:
                 msg.battery_threshold = 0
             else:
                 msg.battery_threshold = 25
