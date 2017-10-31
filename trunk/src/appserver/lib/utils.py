@@ -127,17 +127,17 @@ def new_mongo_row(row_define):
 
 
 def validate_mongo_row(row, row_define):
-    print row, row_define
+    #print row, row_define
     for (k, v) in row.items():
         if v is None:
             return (False, k)
 
         if not row_define.has_key(k):
-            print 1, k, v
+            logging.error("key:%s,value:%s not in row_define" ,k, v )
             return (False, k)
 
         if not isinstance(v, row_define[k][1]):
-            print 2, k, v, row_define[k][1], type(v)
+            logging.error("key:%s,value:%s type:%s isnotinstance %s" ,k, v, type(v), row_define[k][1])
             return (False, k)
     return (True, None)
 
@@ -228,7 +228,7 @@ def change_wifi_info(mac, need_deep=False):
     for item in tmp:
         if item != "":
             tmp2 = item.split(",")
-            print "tmp2:", tmp2
+            #print "tmp2:", tmp2
             if len(tmp2) != "":
                 info = {"wifi_ssid": tmp2[2], "wifi_bssid": tmp2[0]}
                 if need_deep:

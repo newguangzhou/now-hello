@@ -118,7 +118,7 @@ _DEVICE_LOGS_TB_ROW_DEFINE = {
     "location": ([], list)
 }
 def new_device_logs_row():
-    tmp = utils.new_mongo_row(_DEVICE_lOGS_TB_ROW_DEFINE)
+    tmp = utils.new_mongo_row(_DEVICE_LOGS_TB_ROW_DEFINE)
     cur = datetime.datetime.today()
     tmp["time"] = cur
     return tmp

@@ -13,7 +13,7 @@ import type_defines
 import pymongo
 
 from mongo_dao_base import MongoDAOBase
-
+import logging
 
 class NewDeviceMongoDAOException(Exception):
     def __init__(self, message, *args):
@@ -113,7 +113,9 @@ class NewDeviceMongoDAO(MongoDAOBase):
     @gen.coroutine
     def update_device_info(self, imei, **kwargs):
         device_info = kwargs
-        print "update_device_info:", device_info
+        #print "update_device_info:", device_info
+        logging.debug("uidate_device_info,device_info:%s",device_info)
+        
         validate_ret, exp_col = new_device_def.validate_device_cols(**kwargs)
         if not validate_ret:
             raise NewDeviceMongoDAOException(
@@ -273,38 +275,26 @@ class NewDeviceMongoDAO(MongoDAOBase):
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
     @gen.coroutine
+    def get_log_by_imei_before_time(self, imei, timestamp):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[new_device_def.DEVICE_DATABASE][new_device_def.DEVICE_LOGS_TB]
+            cursor = tb.find({"imei": imei,"time":{"$lt":timestamp}},
+                           sort=[("time", pymongo.DESCENDING )]).limit(1)
+            logging.debug("get_log_by_imei_before_time:imei:%s,time:%s,result:%d",imei,timestamp,cursor.count())
+            if cursor.count() <= 0:
+                return None
+            return cursor[0]
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+    @gen.coroutine
     def add_device_log(self, **kwargs):
         device_log = kwargs
         def _callback(mongo_client, **kwargs):
-            tb = mongo_client[new_device_def.DEVICE_DATABASE][
-                new_device_def.DEVICE_LOGS_TB]
-
+            tb = mongo_client[new_device_def.DEVICE_DATABASE][new_device_def.DEVICE_LOGS_TB]
             row = new_device_def.new_device_logs_row()
             for (k, v) in device_log.items():
                 if row.has_key(k):
                     row[k] = v
-                else:
-                    raise DeviceMongoDAOException(
-                        "Unknwon device log row column \"%s\"", k)
-
-            validate_ret, exp_col = new_device_def.validate_device_logs_row(row)
-            if not validate_ret:
-                raise DeviceMongoDAOException(
-                    "Validate device log row failed, invalid column \"%s\"",
-                    exp_col)
             tb.insert_one(row)
 
         yield self.submit(_callback)
-    @gen.coroutine
-    def get_log_by_imei_before_time(self, imei, timestamp):
-        def _callback(mongo_client, **kwargs):
-            tb = mongo_client[new_device_def.DEVICE_DATABASE][
-                new_device_def.DEVICE_LOGS_TB]
-            cursor = tb.find({"imei": imei,"time":{"$lt":timestamp}},
-                           sort=[("time", pymongo.DESCENDING )],
-                           limit=1)
-            if cursor.count() <= 0:
-                return None
-            return cursor
-        ret = yield self.submit(_callback)
-        raise gen.Return(ret)

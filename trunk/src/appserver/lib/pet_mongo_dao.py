@@ -176,6 +176,7 @@ class PetMongoDAO(MongoDAOBase):
             info={"device_imei": imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie}
             res=tb.update_one({"uid": uid}, {"$set": info},
                        upsert=True)
+            logging.info("bind_device:%s, %s", imei, info)
             return res
 
         ret = yield self.submit(_callback)
