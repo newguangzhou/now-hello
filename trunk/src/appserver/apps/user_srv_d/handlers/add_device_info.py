@@ -64,7 +64,7 @@ class AddDeviceInfo(HelperHandler):
         bind_day = datetime.datetime.combine(
             datetime.date.today(),datetime.time.min)
         cur = datetime.datetime.now()
-        last_device_log = yield device_dao.get_log_by_imei_before_time(imei,cur)
+        last_device_log = yield device_dao.get_log_by_imei_before_time(imei, cur)
         old_calorie = 0
         if last_device_log is not None:
             old_calorie = last_device_log["calorie"]

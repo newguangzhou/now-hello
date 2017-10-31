@@ -59,12 +59,13 @@ class TerminalHandler:
         # self.terminal_proto_ios = {}
 
         self.terminal_proto_guarder = {}
+        self.terminal_rpc = kwargs.get("terminal_rpc",None)
 
     def setGPS(self,imei,gps_switch):
         msg = terminal_commands.Params()
         msg.gps_enable = gps_switch
 
-        get_res = terminal_rpc.send_command_params(
+        get_res = self.terminal_rpc.send_command_params(
             imei=imei, command_content=str(msg))
 
     def OnOpen(self, conn_id):
@@ -209,6 +210,7 @@ class TerminalHandler:
                       (ack.orgin_data(), peer, str(ret)), imei)
         raise gen.Return(ret)
 
+
     @gen.coroutine
     def _OnReportLocationInfoReq(self,
                                  conn_id,
@@ -326,7 +328,7 @@ class TerminalHandler:
             logger.warning("imei:%s location fail", pk.imei)
 
         if pet_info is None:
-            logger.error("imei:%s pk:%s not found pet_info", pk, str_pk)
+            logger.error("imei:%s pk:%s not found pet_info", pk.imei, str_pk)
         time_stamp = int(time.time())
         if len(lnglat) != 0:
             location_info = {"lnglat": lnglat,
@@ -341,7 +343,7 @@ class TerminalHandler:
             if len(lnglat3) != 0:
                 location_info["lnglat3"] = lnglat3
                 location_info["radius3"] = radius3
-            logger.info("imei:%s pk:%s location:%s", pk, str_pk,
+            logger.info("imei:%s pk:%s location:%s", pk.imei, str_pk,
                         str(location_info))
             if pet_info is not None:
                 yield self.pet_dao.add_location_info(pet_info["pet_id"],
@@ -386,17 +388,20 @@ class TerminalHandler:
             yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
                                        battery_status, now_time)
+        #//add device log
+        print "---------------add device log ------------",pk.imei,pk.calorie, location_info
+        yield self.new_device_dao.add_device_log(imei=pk.imei, calorie=pk.calorie, location = location_info)
         #add sport info
         if pet_info is not None:
             sport_info = {}
-            sport_info["diary"] = datetime.datetime.combine(
-                datetime.date.today(), datetime.time.min)
+            sport_info["diary"] = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
             sport_info["step_count"] = pk.step_count
             sport_info["distance"] = pk.distance
             sport_info["calorie"] = pk.calorie
             sport_info["target_energy"] = pet_info.get("target_energy", 0)
             yield self.pet_dao.add_sport_info(pet_info["pet_id"], pk.imei,
                                               sport_info)
+
             if pet_info.get("outdoor_on_off",0) == 1 and pet_info.get("pet_status",0)!=2 and pet_info.get("outdoor_wifi",None) is not None:
                 if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
                     outdoor_wifi=pet_info.get("outdoor_wifi",None)
@@ -431,7 +436,7 @@ class TerminalHandler:
                                                        pk.location_info.mac)
 
         #紧急搜索模式下判断是否需要开启GPS
-        if pet_info.get("pet_status",0) == PETSTATUS_FINDING:
+        if pet_info is not None and pet_info.get("pet_status",0) == PETSTATUS_FINDING:
             if radius > 80:
                 #定位误差>80米
                 self.setGPS(pk.imei, GPS_ON)

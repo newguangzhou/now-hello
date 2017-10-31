@@ -32,6 +32,7 @@ from lib.sys_config import SysConfig
 from lib import sys_config
 from configs.mongo_config import MongoConfig2
 from lib.config import *
+from lib import terminal_rpc
 support_setptitle = True
 proctitle = "terminal_srv_d"
 verbose = False
@@ -87,6 +88,7 @@ if __name__ == '__main__':
     IOLoop.current().run_sync(_async_init)
     msg_rpc = MsgRPC(SysConfig.current().get(sys_config.SC_MSG_RPC_URL))
 
+    term_rpc = terminal_rpc.TerminalRPC(SysConfig.current().get(sys_config.SC_TERMINAL_RPC_URL))
     handler = terminal_handler.TerminalHandler(
         conn_mgr,
         debug,
@@ -99,6 +101,7 @@ if __name__ == '__main__':
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr
+        terminal_rpc = term_rpc
     )
 
     conn_mgr.CreateTcpServer("", listen_port, handler)

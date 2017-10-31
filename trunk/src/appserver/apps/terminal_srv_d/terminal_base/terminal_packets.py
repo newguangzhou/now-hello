@@ -57,7 +57,7 @@ class LocationInfo(terminal_proto.ComplexField):
             # 获取维度
             self.fields["latitude"] = terminal_proto.Field(
                 terminal_proto.FLOAT_FIELD).FromStr(data[13:22])
-            print data[23:37]
+            #print data[23:37]
             # 获取定位时间
             self.fields["locator_time"] = terminal_proto.Field(
                 terminal_proto.DATE_FIELD).FromStr(data[23:37])

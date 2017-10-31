@@ -92,8 +92,8 @@ class SendCommandHandler2(tornado.web.RequestHandler):
             self.write("arg error ")
             return
         logger.info("imei:%s, data:%s", imei, data)
-        print data
-        print quote(data)
+        #print data
+        #print quote(data)
         broadcastor = self.settings["broadcastor"]
         #command_pk = terminal_commands.RemotePowerOff()
         #pk = terminal_packets.SendCommandReq(imei, command_pk)
@@ -120,7 +120,7 @@ class SendCommandHandler3(tornado.web.RequestHandler):
         broadcastor = self.settings["broadcastor"]
         if type == "0":
             command_pk = TEST_S2C_COMMAND_DATA.get(command_num, None)
-            print "command_pk", command_pk
+            #print "command_pk", command_pk
             if command_pk is None:
                 self.write("arg error ")
                 return
@@ -152,7 +152,7 @@ class SendCommandHandler4(tornado.web.RequestHandler):
             self.write("arg error ")
             return
         broadcastor = self.settings["broadcastor"]
-        print imei, content
+        #print imei, content
         ret = yield broadcastor.send_msg_multicast((imei, ), str(content))
         ret_str = "send ok" if ret else "send fail"
         self._OnOpLog("s2c send_data:%s ret:%s" % (content, ret_str), imei)
