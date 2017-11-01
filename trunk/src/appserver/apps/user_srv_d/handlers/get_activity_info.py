@@ -106,7 +106,7 @@ class GetActivityInfo(HelperHandler):
             res["data"].append(date_data)
 
         # 成功
-        logging.debug("GetActivityInfo, success %s", self.dump_req())
+        logging.debug("GetActivityInfo, success %s,res:%s", self.dump_req(),res)
         self.res_and_fini(res)
 
     def post(self):
