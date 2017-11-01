@@ -390,8 +390,20 @@ class TerminalHandler:
             sport_info["diary"] = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
             sport_info["step_count"] = pk.step_count
             sport_info["distance"] = pk.distance
-            sport_info["calorie"] = pk.calorie
             sport_info["target_energy"] = pet_info.get("target_energy", 0)
+            old_calorie = pet_info.get("old_calorie",0)
+            bind_day = pet_info.get("bind_day",0)
+            weight=pet_info.get("weight",15)
+            sex=pet_info.get("sex",1)
+            calorie = pk.calorie
+            if bind_day == sport_info["diary"]:
+                if calorie >= old_calorie:
+                    calorie = calorie - old_calorie
+                else:
+                    calorie = 0
+            sport_info["calorie"] = calorie
+            sport_info["calorie_transform"] = \
+                utils.calorie_transform((calorie / 1000.0), weight, sex)
             yield self.pet_dao.add_sport_info(pet_info["pet_id"], pk.imei,
                                               sport_info)
 
