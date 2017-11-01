@@ -246,7 +246,7 @@ class TerminalHandler:
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
              "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
-             "pet_status","home_location"),
+             "pet_status","home_location","pet_is_in_home"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
@@ -402,35 +402,96 @@ class TerminalHandler:
             yield self.pet_dao.add_sport_info(pet_info["pet_id"], pk.imei,
                                               sport_info)
 
-            if pet_info.get("outdoor_on_off",0) == 1 and pet_info.get("pet_status",0)!=2 and pet_info.get("outdoor_wifi",None) is not None:
-                if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-                    outdoor_wifi=pet_info.get("outdoor_wifi",None)
-                    wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-                    is_in_protected=utils.is_in_protected(outdoor_wifi,wifi_info)
-                    self._SendOutdoorInOrOutProtected(pk.imei,is_in_protected)
-                else:
-                    #离开保护区域
-                    self._SendOutdoorInOrOutProtected(pk.imei, False)
+            is_outdoor_state=pet_info.get("outdoor_on_off", 0) == 1 and pet_info.get("pet_status", 0) != 2 and pet_info.get(
+                            "outdoor_wifi", None) is not None
+            # 户外保护状态判断
+            if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
+                outdoor_wifi = pet_info.get("outdoor_wifi", None)
+                is_in_protected = utils.is_in_protected(outdoor_wifi, wifi_info)
+                outdoor_in_protected = pet_info.get("outdoor_in_protected", 0)
+                if (outdoor_in_protected == 1 and not is_in_protected) or (
+                            outdoor_in_protected == 0 and is_in_protected):
+                    yield self.pet_dao.update_pet_info(
+                        pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)
+                    # 发送状态消息
+                    if is_outdoor_state:
+                        self._SendOutdoorInOrOutProtected(pk.imei, is_in_protected)
             else:
-                if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-                    wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-                    common_wifi = pet_info.get("common_wifi", None)
-                    home_wifi = pet_info.get("home_wifi", None)
-                    new_common_wifi = utils.get_new_common_wifi(
+                    yield self.pet_dao.update_pet_info(
+                        pet_info["pet_id"], outdoor_in_protected=0)
+                    # 发送状态消息
+                    if is_outdoor_state:
+                        self._SendOutdoorInOrOutProtected(pk.imei, False)
+            # 户外保护逻辑判断
+
+            # 在家离家逻辑判断
+            if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
+                common_wifi = pet_info.get("common_wifi", None)
+                home_wifi = pet_info.get("home_wifi", None)
+                new_common_wifi = utils.get_new_common_wifi(
                     common_wifi, wifi_info, home_wifi)
-                    uid = pet_info.get("uid", None)
-                    if uid is not None:
-                        is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
-                                                  wifi_info)
-                        self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
+                uid = pet_info.get("uid", None)
+                if uid is not None:
                     yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
-                                                        new_common_wifi)
-                elif pk.location_info.locator_status==terminal_packets.LOCATOR_STATUS_STATION:
-                    home_location=pet_info.get("home_location")
-                    if home_location is not None and len(lnglat)!=0:
-                        disance=utils.haversine(float(home_location.get("longitude")),float(home_location.get("latitude")),float(lnglat[0]),float(lnglat[1]))
-                        is_in_home=True if (disance<=radius*1.2) else False
-                        self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
+                                                            new_common_wifi)
+                    is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
+                                                  wifi_info)
+                    pet_is_in_home = pet_info.get("pet_is_in_home", 1)
+                    if (pet_is_in_home == 1 and not is_in_home) or (
+                                    pet_is_in_home == 0 and  is_in_home):
+                        yield self.pet_dao.update_pet_info(
+                                    pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
+                        # 发送状态消息
+                        if not is_outdoor_state:
+                            self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
+            elif pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_STATION:
+                home_location = pet_info.get("home_location")
+                if home_location is not None and len(lnglat) != 0:
+                    disance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
+                                          float(lnglat[0]), float(lnglat[1]))
+                    is_in_home = True if (disance <= radius * 1.2) else False
+                    pet_is_in_home = pet_info.get("pet_is_in_home", 1)
+                    if (pet_is_in_home == 1 and not is_in_home) or (
+                            pet_is_in_home == 0 and is_in_home):
+                        yield self.pet_dao.update_pet_info(
+                            pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
+                        # 发送状态消息
+                        if not is_outdoor_state:
+                            self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
+            # 在家离家逻辑判断
+
+
+            # if pet_info.get("outdoor_on_off",0) == 1 and pet_info.get("pet_status",0)!=2 and pet_info.get("outdoor_wifi",None) is not None:
+            #     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+            #         outdoor_wifi=pet_info.get("outdoor_wifi",None)
+            #         wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
+            #         is_in_protected=utils.is_in_protected(outdoor_wifi,wifi_info)
+            #         self._SendOutdoorInOrOutProtected(pk.imei,is_in_protected)
+            #     else:
+            #         #离开保护区域
+            #         self._SendOutdoorInOrOutProtected(pk.imei, False)
+            # else:
+            #     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+            #         wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
+            #         common_wifi = pet_info.get("common_wifi", None)
+            #         home_wifi = pet_info.get("home_wifi", None)
+            #         new_common_wifi = utils.get_new_common_wifi(
+            #         common_wifi, wifi_info, home_wifi)
+            #         uid = pet_info.get("uid", None)
+            #         if uid is not None:
+            #             is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
+            #                                       wifi_info)
+            #             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
+            #         yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
+            #                                             new_common_wifi)
+            #     elif pk.location_info.locator_status==terminal_packets.LOCATOR_STATUS_STATION:
+            #         home_location=pet_info.get("home_location")
+            #         if home_location is not None and len(lnglat)!=0:
+            #             disance=utils.haversine(float(home_location.get("longitude")),float(home_location.get("latitude")),float(lnglat[0]),float(lnglat[1]))
+            #             is_in_home=True if (disance<=radius*1.2) else False
+            #             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
             yield self.new_device_dao.report_wifi_info(pk.imei,
                                                        pk.location_info.mac)
@@ -809,12 +870,12 @@ class TerminalHandler:
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
-            outdoor_in_protected=pet_info.get("outdoor_in_protected",0)
-            if(outdoor_in_protected==1 and is_in_protected) or (
-                    outdoor_in_protected==0 and not is_in_protected):
-                return
-            yield self.pet_dao.update_pet_info(
-                pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)
+            # outdoor_in_protected=pet_info.get("outdoor_in_protected",0)
+            # if(outdoor_in_protected==1 and is_in_protected) or (
+            #         outdoor_in_protected==0 and not is_in_protected):
+            #     return
+            # yield self.pet_dao.update_pet_info(
+            #     pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)
             msg=push_msg.new_pet_outdoor_out_portected_msg()
             if is_in_protected:
                 msg=push_msg.new_pet_outdoor_in_portected_msg()
@@ -874,12 +935,12 @@ class TerminalHandler:
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
-            pet_is_in_home = pet_info.get("pet_is_in_home", 1)
-            if (pet_is_in_home == 1 and is_in_home) or (
-                            pet_is_in_home == 0 and not is_in_home):
-                return
-            yield self.pet_dao.update_pet_info(
-                pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
+            # pet_is_in_home = pet_info.get("pet_is_in_home", 1)
+            # if (pet_is_in_home == 1 and is_in_home) or (
+            #                 pet_is_in_home == 0 and not is_in_home):
+            #     return
+            # yield self.pet_dao.update_pet_info(
+            #     pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
 
             msg = push_msg.new_pet_not_home_msg()
             if is_in_home:
