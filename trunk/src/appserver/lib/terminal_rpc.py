@@ -50,5 +50,6 @@ class TerminalRPC:
 
     @gen.coroutine
     def send_command_params(self, **args):
+        logging.info("send_command_params:%s",args)
         ret = yield self.call("send_command_params", **args)
         raise gen.Return(ret)

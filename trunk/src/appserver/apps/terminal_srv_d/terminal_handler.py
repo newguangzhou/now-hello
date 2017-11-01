@@ -61,13 +61,6 @@ class TerminalHandler:
         self.terminal_proto_guarder = {}
         self.terminal_rpc = kwargs.get("terminal_rpc",None)
 
-    def setGPS(self,imei,gps_switch):
-        msg = terminal_commands.Params()
-        msg.gps_enable = gps_switch
-
-        get_res = self.terminal_rpc.send_command_params(
-            imei=imei, command_content=str(msg))
-
     def OnOpen(self, conn_id):
         conn = self.conn_mgr.GetConn(conn_id)
         logger.info("Terminal conn is opened, id=%u peer=%s", conn_id,
@@ -498,11 +491,20 @@ class TerminalHandler:
 
         #紧急搜索模式下判断是否需要开启GPS
         if pet_info is not None and pet_info.get("pet_status",0) == PETSTATUS_FINDING:
+            print "imei:",pk.imei,"radius=",radius 
             if radius > 80:
                 #定位误差>80米
-                self.setGPS(pk.imei, GPS_ON)
+                msg = terminal_commands.Params()
+                msg.gps_enable = GPS_ON
+                msg.report_time = 1
+                get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
+                print "setGPS imei:",pk.imei,"ON"
             else:
-                self.setGPS(pk.imei, GPS_OFF)
+                msg = terminal_commands.Params()
+                msg.gps_enable = GPS_OFF
+                msg.report_time = 1
+                get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
+                print "setGPS imei:",pk.imei,"OFF"
 
         raise gen.Return(True)
 
@@ -846,6 +848,7 @@ class TerminalHandler:
         yield self.new_device_dao.add_device_log(imei=pk.imei,
                                                  calorie=pk.calorie,
                                                  location=location_info)
+        logger.info("add_device_log, imei:%s,calorie:%s", pk.imei,calorie)
 
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy"),
