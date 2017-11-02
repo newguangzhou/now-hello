@@ -239,7 +239,7 @@ class TerminalHandler:
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
              "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
-             "pet_status","home_location","pet_is_in_home"),
+             "pet_status","home_location","pet_is_in_home","weight","sex"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
@@ -382,7 +382,7 @@ class TerminalHandler:
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
                                        battery_status, now_time)
         #//add device log
-        print "---------------add device log ------------",pk.imei,pk.calorie, location_info
+        #print "---------------add device log ------------",pk.imei,pk.calorie, location_info
         yield self.new_device_dao.add_device_log(imei=pk.imei, calorie=pk.calorie, location = location_info)
         #add sport info
         if pet_info is not None:
@@ -406,6 +406,7 @@ class TerminalHandler:
                 utils.calorie_transform((calorie / 1000.0), weight, sex)
             yield self.pet_dao.add_sport_info(pet_info["pet_id"], pk.imei,
                                               sport_info)
+            logger.debug("add_sport_info,imei: %s , pet_id: %s , sport_info: %s", pk.imei, pet_info["pet_id"], sport_info)
 
             is_outdoor_state=pet_info.get("outdoor_on_off", 0) == 1 and pet_info.get("pet_status", 0) != 2 and pet_info.get(
                             "outdoor_wifi", None) is not None
