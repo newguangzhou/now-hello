@@ -173,19 +173,17 @@ class TerminalHandler:
 
     def OnClose(self, conn_id, is_eof):
         conn = self.conn_mgr.GetConn(conn_id)
-        if is_eof:
-            logger.warning("Terminal conn is closed by peer, peer=\"%s\"",
-                           conn.GetPeer())
-        else:
-            logger.warning("Terminal conn is closed, info=\"%s\"",
-                           conn.GetPeer())
+        if conn is not None:
+            if is_eof:
+                logger.warning("Terminal conn is closed by peer, peer=\"%s\"",
+                               conn.GetPeer())
+            else:
+                logger.warning("Terminal conn is closed, info=\"%s\"",
+                               conn.GetPeer())
 
-        if self.terminal_proto_guarder.has_key(conn_id):
-            del self.terminal_proto_guarder[conn_id]
-        conn.close()
-        # 打日志
-        imei = self._broadcastor.get_imei_by_conn(conn_id)
-
+            if self.terminal_proto_guarder.has_key(conn_id):
+                del self.terminal_proto_guarder[conn_id]
+            conn.close()
         self._broadcastor.un_register_conn(conn_id)
 
     def OnTimeout(self, conn_id):
