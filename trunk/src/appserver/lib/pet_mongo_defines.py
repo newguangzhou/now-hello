@@ -81,6 +81,7 @@ PET_SPORT_TB_ROW_DEFINE = {
     "distance": (0, int),
     "target_energy": (0,float),
     "calorie": (0, int),
+    "calorie_transform": (0, int),
     #"location"
 }
 """
