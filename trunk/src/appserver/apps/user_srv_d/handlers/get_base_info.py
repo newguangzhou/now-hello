@@ -23,17 +23,22 @@ class GetBaseInfo(HelperHandler):
         pet_dao = self.settings["pet_dao"]
         device_dao = self.settings["device_dao"]
         conf = self.settings["appconfig"]
-
+        custom_headers = self.custom_headers()
         res = {"status": error_codes.EC_SUCCESS}
 
         uid = None
         token = None
         pet_id = -1
+        x_os_int=23
 
         try:
             uid = int(self.get_argument("uid"))
             token = self.get_argument("token")
             pet_id = int(self.get_argument("pet_id", -1))
+            try:
+                x_os_int = custom_headers.get("x_os_int", 23)
+            except Exception, e:
+                pass
         except Exception, e:
             logging.warning("GetBaseInfo, invalid args, %s", self.dump_req())
             res["status"] = error_codes.EC_INVALID_ARGS
@@ -92,8 +97,8 @@ class GetBaseInfo(HelperHandler):
                     res["outdoor_wifi_bssid"] = outdoor_wifi["outdoor_wifi_bssid"]
                     res["outdoor_wifi_ssid"]=outdoor_wifi["outdoor_wifi_ssid"]
                 res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
-
-
+                #补解绑清除x_os_int的漏洞
+                yield pet_dao.update_pet_info_by_uid(uid,device_os_int=x_os_int)
         except Exception, e:
             logging.error("GetBaseInfo, error, %s %s", self.dump_req(),
                           self.dump_exp(e))

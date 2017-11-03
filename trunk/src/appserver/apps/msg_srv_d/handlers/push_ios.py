@@ -38,7 +38,10 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
             push_type=""
             try:
                 desc = self.get_str_arg("desc")
-                channel = int(self.get_argument("channel"))
+                try:
+                    channel = int(self.get_argument("channel"))
+                except Exception,e:
+                    pass
                 payload = self.get_str_arg("payload")
                 extra = self.get_str_arg("extra")
                 push_type = self.get_argument("push_type", "alias")

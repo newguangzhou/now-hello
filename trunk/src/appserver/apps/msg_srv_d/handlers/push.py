@@ -37,8 +37,11 @@ class PushAndrod(xmq_web_handler.XMQWebHandler):
             push_type="alias"
             payload=""
             try:
-                title = self.get_str_arg("title")
-                desc = self.get_str_arg("desc")
+                try:
+                    title = self.get_str_arg("title")
+                    desc = self.get_str_arg("desc")
+                except Exception,e:
+                    pass
                 payload = self.get_str_arg("payload")
                 pass_through = int(self.get_argument("pass_through", 0))
                 push_type = self.get_argument("push_type", "alias")
