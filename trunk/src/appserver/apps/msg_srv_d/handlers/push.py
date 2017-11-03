@@ -33,21 +33,32 @@ class PushAndrod(xmq_web_handler.XMQWebHandler):
         else:
             title=""
             desc=""
+            pass_through=0
+            push_type="alias"
+            payload=""
             try:
                 title = self.get_str_arg("title")
                 desc = self.get_str_arg("desc")
+                payload = self.get_str_arg("payload")
+                pass_through = int(self.get_argument("pass_through", 0))
+                push_type = self.get_argument("push_type", "alias")
             except Exception, e:
                 logging.warning("PushAndrod, invalid args, %s %s", self.dump_req(),
                                 self.dump_exp(e))
-            payload = self.get_str_arg("payload")
-            pass_through = int(self.get_argument("pass_through", 0))
-            push_type = self.get_argument("push_type","alias")
-            if push_type == "alias":
-                yield self.send_to_alias_android(uids, title, desc, payload,
+                res["status"] = error_codes.EC_INVALID_ARGS
+                self.res_and_fini(res)
+                return
+
+            try:
+                if push_type == "alias":
+                    yield self.send_to_alias_android(uids, title, desc, payload,
                                              pass_through)
-            elif push_type == "user_account":
-                yield self.send_to_useraccount_android(uids, title, desc, payload,
+                elif push_type == "user_account":
+                    yield self.send_to_useraccount_android(uids, title, desc, payload,
                                                  pass_through)
+            except Exception,e:
+                logging.warning("PushAndrod, xmpush-error, %s %s", self.dump_req(),
+                                self.dump_exp(e))
         self.res_and_fini(res)
         return
 

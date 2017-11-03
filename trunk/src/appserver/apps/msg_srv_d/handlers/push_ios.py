@@ -31,26 +31,31 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
         if uids == "":
             res["status"] = error_codes.EC_INVALID_ARGS
         else:
+            channel = 0
+            desc=""
+            payload=""
+            extra=""
+            push_type=""
             try:
                 desc = self.get_str_arg("desc")
+                channel = int(self.get_argument("channel"))
+                payload = self.get_str_arg("payload")
+                extra = self.get_str_arg("extra")
+                push_type = self.get_argument("push_type", "alias")
             except Exception, e:
                 logging.warning("PushIOS, invalid args, %s %s", self.dump_req(),
                                 self.dump_exp(e))
-
-            payload = self.get_str_arg("payload")
-            extra=self.get_str_arg("extra")
-            push_type = self.get_argument("push_type", "alias")
-            channel=0
+                res["status"] = error_codes.EC_INVALID_ARGS
+                self.res_and_fini(res)
+                return
             try:
-                channel=int(self.get_argument("channel"))
+                if push_type == "alias":
+                    yield self.send_to_alias_ios(uids, desc, payload)
+                elif push_type == "user_account":
+                    yield self.send_to_useraccount_ios(uids,payload, eval(extra),channel)
             except Exception, e:
-                logging.warning("PushIOS, invalid args, %s %s", self.dump_req(),
-                                self.dump_exp(e))
-
-            if push_type == "alias":
-                yield self.send_to_alias_ios(uids, desc, payload)
-            elif push_type == "user_account":
-                yield self.send_to_useraccount_ios(uids,payload, eval(extra),channel)
+                logging.warning("PushIOS, xmpush-error, %s %s", self.dump_req(),
+                            self.dump_exp(e))
 
         self.res_and_fini(res)
         return
