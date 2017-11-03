@@ -31,8 +31,14 @@ class PushAndrod(xmq_web_handler.XMQWebHandler):
         if uids == "":
             res["status"] = error_codes.EC_INVALID_ARGS
         else:
-            title = self.get_str_arg("title")
-            desc = self.get_str_arg("desc")
+            title=""
+            desc=""
+            try:
+                title = self.get_str_arg("title")
+                desc = self.get_str_arg("desc")
+            except Exception, e:
+                logging.warning("PushAndrod, invalid args, %s %s", self.dump_req(),
+                                self.dump_exp(e))
             payload = self.get_str_arg("payload")
             pass_through = int(self.get_argument("pass_through", 0))
             push_type = self.get_argument("push_type","alias")

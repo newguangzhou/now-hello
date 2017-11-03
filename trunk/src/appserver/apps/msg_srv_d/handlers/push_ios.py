@@ -31,7 +31,11 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
         if uids == "":
             res["status"] = error_codes.EC_INVALID_ARGS
         else:
-            desc = self.get_str_arg("desc")
+            try:
+                desc = self.get_str_arg("desc")
+            except Exception, e:
+                logging.warning("PushIOS, invalid args, %s %s", self.dump_req(),
+                                self.dump_exp(e))
 
             payload = self.get_str_arg("payload")
             extra=self.get_str_arg("extra")

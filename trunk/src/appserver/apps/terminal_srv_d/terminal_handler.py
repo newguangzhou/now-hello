@@ -408,7 +408,7 @@ class TerminalHandler:
                                               sport_info)
             logger.debug("add_sport_info,imei: %s , pet_id: %s , sport_info: %s", pk.imei, pet_info["pet_id"], sport_info)
 
-            is_outdoor_state=pet_info.get("outdoor_on_off", 0) == 1 and pet_info.get("pet_status", 0) != 2 and pet_info.get(
+            is_outdoor_state=pet_info.get("outdoor_on_off", 0) == 1 and pet_info.get("pet_status", 0) == 1 and pet_info.get(
                             "outdoor_wifi", None) is not None
             # 户外保护状态判断
             if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
