@@ -265,6 +265,10 @@ class TerminalHandler:
 
         self._OnOpLog('c2s header=%s pk=%s peer=%s' % (header, str_pk, peer),
                       pk.imei)
+        #发送设备在线消息
+        now_time = datetime.datetime.now()
+        yield self._SendOnlineMsg(pk.imei, app_electric_quantity, now_time)
+
 
         self.updateDeviceStatus(pk.imei)
         if need_send_ack:
@@ -690,19 +694,19 @@ class TerminalHandler:
             software_version=unicode(pk.software_version),
             electric_quantity=pk.electric_quantity)
 
-        now_time = datetime.datetime.now()
-        battery_status = 0
-        if pk.electric_quantity <= LOW_BATTERY:
-            battery_status = 1
-            if pk.electric_quantity <= ULTRA_LOW_BATTERY:
-                battery_status = 2
-        yield self._SendOnlineMsg(pk.imei, pk.electric_quantity, now_time)
-        device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
-        if device_info is not None:
-            if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
-                yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
-                yield self._SendBatteryMsg(pk.imei, pk.electric_quantity,
-                                           battery_status, now_time)
+   #     now_time = datetime.datetime.now()
+   #     battery_status = 0
+    #    if pk.electric_quantity <= LOW_BATTERY:
+     #       battery_status = 1
+      ##      if pk.electric_quantity <= ULTRA_LOW_BATTERY:
+        #        battery_status = 2
+       # yield self._SendOnlineMsg(pk.imei, pk.electric_quantity, now_time)
+        #device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
+        #if device_info is not None:
+         #   if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
+          #      yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
+           #     yield self._SendBatteryMsg(pk.imei, pk.electric_quantity,
+            #                               battery_status, now_time)
 
         # Ack
         ack = terminal_packets.ReportTerminalStatusAck(header.sn, 0)
