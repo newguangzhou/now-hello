@@ -237,7 +237,7 @@ class TerminalHandler:
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
              "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
-             "pet_status","home_location","pet_is_in_home"),
+             "pet_status","home_location","pet_is_in_home","weight","sex"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
@@ -263,6 +263,10 @@ class TerminalHandler:
 
         self._OnOpLog('c2s header=%s pk=%s peer=%s' % (header, str_pk, peer),
                       pk.imei)
+        #发送设备在线消息
+        now_time = datetime.datetime.now()
+        yield self._SendOnlineMsg(pk.imei, app_electric_quantity, now_time)
+
 
         self.updateDeviceStatus(pk.imei)
         if need_send_ack:
@@ -380,7 +384,7 @@ class TerminalHandler:
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
                                        battery_status, now_time)
         #//add device log
-        print "---------------add device log ------------",pk.imei,pk.calorie, location_info
+        #print "---------------add device log ------------",pk.imei,pk.calorie, location_info
         yield self.new_device_dao.add_device_log(imei=pk.imei, calorie=pk.calorie, location = location_info)
         #add sport info
         if pet_info is not None:
@@ -404,8 +408,9 @@ class TerminalHandler:
                 utils.calorie_transform((calorie / 1000.0), weight, sex)
             yield self.pet_dao.add_sport_info(pet_info["pet_id"], pk.imei,
                                               sport_info)
+            logger.debug("add_sport_info,imei: %s , pet_id: %s , sport_info: %s", pk.imei, pet_info["pet_id"], sport_info)
 
-            is_outdoor_state=pet_info.get("outdoor_on_off", 0) == 1 and pet_info.get("pet_status", 0) != 2 and pet_info.get(
+            is_outdoor_state=pet_info.get("outdoor_on_off", 0) == 1 and pet_info.get("pet_status", 0) == 1 and pet_info.get(
                             "outdoor_wifi", None) is not None
             # 户外保护状态判断
             if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
@@ -687,19 +692,19 @@ class TerminalHandler:
             software_version=unicode(pk.software_version),
             electric_quantity=pk.electric_quantity)
 
-        now_time = datetime.datetime.now()
-        battery_status = 0
-        if pk.electric_quantity <= LOW_BATTERY:
-            battery_status = 1
-            if pk.electric_quantity <= ULTRA_LOW_BATTERY:
-                battery_status = 2
-        yield self._SendOnlineMsg(pk.imei, pk.electric_quantity, now_time)
-        device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
-        if device_info is not None:
-            if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
-                yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
-                yield self._SendBatteryMsg(pk.imei, pk.electric_quantity,
-                                           battery_status, now_time)
+   #     now_time = datetime.datetime.now()
+   #     battery_status = 0
+    #    if pk.electric_quantity <= LOW_BATTERY:
+     #       battery_status = 1
+      ##      if pk.electric_quantity <= ULTRA_LOW_BATTERY:
+        #        battery_status = 2
+       # yield self._SendOnlineMsg(pk.imei, pk.electric_quantity, now_time)
+        #device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
+        #if device_info is not None:
+         #   if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
+          #      yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
+           #     yield self._SendBatteryMsg(pk.imei, pk.electric_quantity,
+            #                               battery_status, now_time)
 
         # Ack
         ack = terminal_packets.ReportTerminalStatusAck(header.sn, 0)

@@ -15,6 +15,8 @@ from tornado import gen
 from lib import error_codes
 from lib import xmq_web_handler
 
+proctitle="msg_srv_d"
+
 class SendSMS(xmq_web_handler.XMQWebHandler):
     @asynchronous
     @gen.coroutine
@@ -43,8 +45,8 @@ class SendSMS(xmq_web_handler.XMQWebHandler):
             return
         else:
             ok = yield sms_sender(sms_type,sms,phone_num,
-                                  appconfig[appconfig.proctitle]["dayu_appkey"],
-                                  appconfig[appconfig.proctitle]["dayu_secrt"])
+                                  appconfig[proctitle]["dayu_appkey"],
+                                  appconfig[proctitle]["dayu_secret"])
             if not ok:
                 res = {"status": error_codes.EC_FAIL}
         # 发送成功

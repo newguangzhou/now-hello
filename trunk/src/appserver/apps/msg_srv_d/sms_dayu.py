@@ -8,6 +8,9 @@ import logging
 
 import traceback
 import json
+
+from tornado import gen
+
 from top import api
 import top
 
@@ -32,6 +35,7 @@ def send_verify(code, product, phones,appkey="23566149",secrt="f95d87510975317c9
         logging.exception(e)
         return False
 
+@gen.coroutine
 def send_message(type,message,phone,appkey="23566149",secrt="f23566149p95d87510975317c9539d858c010f5a0"):
     # logging.debug("code:%s product:%s phones:%s", code, product, phones)
     logging.debug("message:%s,phone:%s",message,phone)
@@ -73,10 +77,11 @@ def send_message(type,message,phone,appkey="23566149",secrt="f23566149p95d875109
         print resp
         print resp["alibaba_aliqin_fc_sms_num_send_response"]["result"][
             "success"]
-        return True
     except Exception, e:
         logging.exception(e)
-        return False
+        raise gen.Return(False)
+    else:
+        raise gen.Return(True)
 
 
 def main():
