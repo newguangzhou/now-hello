@@ -239,7 +239,7 @@ class TerminalHandler:
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
              "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
-             "pet_status","home_location","pet_is_in_home","weight","sex"),
+             "pet_status","home_location","pet_is_in_home","weight","sex","bind_day","old_calorie"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
