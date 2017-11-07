@@ -207,12 +207,14 @@ class PetMongoDAO(MongoDAOBase):
 
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
+    @gen.coroutine
     def get_last_location_info(self, pet_id):
-        res_info = self.get_location_infos(pet_id)
+        res_info = yield self.get_location_infos(pet_id)
         if res_info is not None:
             length = res_info.count()
             if length > 0:
-                return res_info[length - 1]
+                raise gen.Return(res_info[length - 1])
+
 
     @gen.coroutine
     def add_location_info(self, pet_id, device_imei, location_info):

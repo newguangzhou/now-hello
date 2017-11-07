@@ -98,7 +98,7 @@ class GetPetStatusInfo(HelperHandler):
             res["battery_status"]=info.get("battery_status",0)
 
             #增加状态提示
-            location_info = pet_dao.get_last_location_info(pet_id)
+            location_info = yield pet_dao.get_last_location_info(pet_id)
             if location_info is not None:
                 res["locator_status"] = location_info["locator_status"]
                 res["station_status"] = location_info.get("station_status", 0)
