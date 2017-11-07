@@ -98,14 +98,14 @@ class GetPetStatusInfo(HelperHandler):
             res["battery_status"]=info.get("battery_status",0)
 
             #增加状态提示
-            location_info = yield pet_dao.get_last_location_info(pet_id)
+            location_info = pet_dao.get_last_location_info(pet_id)
             if location_info is not None:
                 res["locator_status"] = location_info["locator_status"]
                 res["station_status"] = location_info.get("station_status", 0)
                 if res["device_status"]  == 0:
 
                     if electric_quantity == 0:
-                        res["offline_reason"] == 1 #电量为零
+                        res["offline_reason"] = 1 #电量为零
                     elif res["station_status"] == 1:
                         res["offline_reason"] = 2   #移动网络信号差
                     else:
@@ -118,7 +118,7 @@ class GetPetStatusInfo(HelperHandler):
 
 
         except Exception,e:
-            logging.debug("GetPetStatusInfo, error %s", self.dump_req())
+            logging.debug("GetPetStatusInfo, req:%s error:%s", self.dump_req(),e.message)
             self.res_and_fini(res)
             return
 
