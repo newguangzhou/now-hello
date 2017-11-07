@@ -282,6 +282,7 @@ class TerminalHandler:
         radius = -1
         radius2 = -1
         radius3 = -1
+        station_status = 0#基站信号是否正常  0:正常  1：信号异常(信号差)
 
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_GPS:
 
@@ -293,6 +294,10 @@ class TerminalHandler:
         elif pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_STATION:
             bts_info, near_bts_infos = util.split_locator_station_info(
                 pk.location_info.station_locator_data)
+
+            #判断基站信号强弱
+            station_status = self.is_station_signal_low(pk.location_info.station_locator_data)
+
             ret = yield self.get_location_by_bts_info(pk.imei, bts_info,
                                                       near_bts_infos)
             if ret is not None:
@@ -332,7 +337,8 @@ class TerminalHandler:
                              "radius": radius,
                              "locator_time": locator_time,
                              "locator_status": locator_status,
-                             "server_recv_time": time_stamp
+                             "server_recv_time": time_stamp,
+                             "station_status" : station_status
                              }
             if len(lnglat2) != 0:
                 location_info["lnglat2"] = lnglat2
@@ -1113,3 +1119,19 @@ class TerminalHandler:
     @run_on_executor
     def get_location_by_mixed(self, imei, bts_info, near_bts_infos, macs):
         return get_location_by_mixed(imei, bts_info, near_bts_infos, macs)
+
+    ###判断基站信号是否差,信号差返回 1
+    def is_station_signal_low(self, station_infos):
+        if len(station_infos) > 2:
+            return 0
+        if len(station_infos) < 1:
+            return 1
+        tmp = station_infos[0].split(",")
+        if len(tmp) >= 5 :
+            if int(tmp[4]) >= 20:
+                return 0
+        return 1
+
+
+
+

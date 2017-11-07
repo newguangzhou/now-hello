@@ -102,6 +102,7 @@ PET_LOCATION_TB_ROW_DEFINE = {
     "radius2": (0, int),
     "radius3": (0, int),
     "locator_status":(5,int),
+    "station_status":(0,int),   #基站信号情况 0：正常 1：异常(信号差)
     #"location"
 }
 

@@ -71,6 +71,7 @@ class PetLocation(HelperHandler):
                     res["location_time"] = int(time.mktime(tmp[
                         "locator_time"].timetuple()))
                     res["locator_status"]=tmp.get("locator_status",5)
+                    res["station_status"]=tmp.get("station_status",0)#基站状态
             else:
                 res["status"] = error_codes.EC_NODATA
         except Exception, e:
