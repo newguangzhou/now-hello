@@ -13,9 +13,8 @@ from terminal_base import terminal_proto, terminal_commands, terminal_packets, u
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
-#from lib.type_defines import *
+from lib.type_defines import *
 
-from trunk.src.appserver.lib import type_defines
 
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
 logger = logging.getLogger(__name__)
