@@ -521,13 +521,13 @@ class TerminalHandler:
                 msg = terminal_commands.Params()
                 msg.gps_enable = type_defines.GPS_ON
                 msg.report_time = 1
-                get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
+                yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
                 print "setGPS imei:",pk.imei,"ON"
             else:
                 msg = terminal_commands.Params()
                 msg.gps_enable = type_defines.GPS_OFF
                 msg.report_time = 1
-                get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
+                yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
                 print "setGPS imei:",pk.imei,"OFF"
 
         raise gen.Return(True)
@@ -1075,14 +1075,23 @@ class TerminalHandler:
             pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
                                                        device_imei=imei)
             if pet_info is not None:
+
                 uid = pet_info.get("uid", None)
                 if uid is None:
                     logger.warning("imei:%s uid not find", imei)
                     continue
-                location_info = yield self.pet_dao.pet_info(["pet_id"])
-                locator_status = location_info.get("locator_status", terminal_packets.LOCATOR_STATUS_MIXED )
-                msg_ios = push_msg.new_device_off_line_msg(locator_status, push_msg.CT_IOS)
-                msg_android = push_msg.new_device_off_line_msg(locator_status, push_msg.CT_ANDROID)
+                device_info = yield self.new_device_dao.get_device_info(
+                    imei, ("electric_quantity"))
+                electric_quantity = device_info.get("electric_quantity", -1)
+                offline_reason = 3
+                if electric_quantity == 0:
+                    offline_reason = 1
+                else:
+                    location_info = yield self.pet_dao.get_last_location_info(pet_info["pet_id"])
+                    if location_info.get("station_status") == 1:
+                        offline_reason = 2
+                msg_ios = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_IOS)
+                msg_android = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_ANDROID)
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )
