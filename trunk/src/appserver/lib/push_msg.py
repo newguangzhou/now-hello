@@ -59,7 +59,7 @@ def new_pet_in_home_msg():
     return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
 
-def new_location_change_msg(latitude, longitude, location_time, radius, locator_status, client_type = CT_ANDROID):
+def new_location_change_msg(latitude, longitude, location_time, radius, locator_status, station_status, client_type = CT_ANDROID):
     msg = {"type": "pet",
            "signal": "location-change",
            "data": {
@@ -67,7 +67,8 @@ def new_location_change_msg(latitude, longitude, location_time, radius, locator_
                "location_time": location_time,
                "longitude": longitude,
                "radius": radius,
-               "locator_status":locator_status
+               "locator_status":locator_status,
+               "station_status":station_status
            }}
     if client_type == CT_IOS:
         return ios_msg(msg)
