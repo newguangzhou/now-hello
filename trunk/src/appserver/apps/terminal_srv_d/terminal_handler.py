@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 from lib import utils
 from lib import push_msg
-from lib import terminal_rpc
+#from lib import terminal_rpc
 LOW_BATTERY = 25
 ULTRA_LOW_BATTERY = 15
 
@@ -355,15 +355,17 @@ class TerminalHandler:
                 if uid is not None:
                     msg = push_msg.new_location_change_msg(
                         "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                        int(time.mktime(locator_time.timetuple())), radius)
+                        int(time.mktime(locator_time.timetuple())), radius, locator_status,
+                        push_msg.CT_ANDROID)
                     try:
                         yield self.msg_rpc.push_android(uids=str(uid),
                                                         payload=msg,
                                                         pass_through=1)
                         #channel:0,都推送（默认）；1，apns_only；2：connection_only
-                        msg = push_msg.ios_location_change_msg(
+                        msg = push_msg.new_location_change_msg(
                             "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                            int(time.mktime(locator_time.timetuple())), radius)
+                            int(time.mktime(locator_time.timetuple())), radius,locator_status,
+                            push_msg.CT_IOS)
                         yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                                 payload="xmq",
                                                                 extra=msg,
@@ -513,18 +515,18 @@ class TerminalHandler:
                                                        pk.location_info.mac)
 
         #紧急搜索模式下判断是否需要开启GPS
-        if pet_info is not None and pet_info.get("pet_status",0) == PETSTATUS_FINDING:
+        if pet_info is not None and pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:
             print "imei:",pk.imei,"radius=",radius 
             if radius > 80:
                 #定位误差>80米
                 msg = terminal_commands.Params()
-                msg.gps_enable = GPS_ON
+                msg.gps_enable = type_defines.GPS_ON
                 msg.report_time = 1
                 get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
                 print "setGPS imei:",pk.imei,"ON"
             else:
                 msg = terminal_commands.Params()
-                msg.gps_enable = GPS_OFF
+                msg.gps_enable = type_defines.GPS_OFF
                 msg.report_time = 1
                 get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
                 print "setGPS imei:",pk.imei,"OFF"
@@ -871,7 +873,7 @@ class TerminalHandler:
         yield self.new_device_dao.add_device_log(imei=pk.imei,
                                                  calorie=pk.calorie,
                                                  location=location_info)
-        logger.info("add_device_log, imei:%s,calorie:%s", pk.imei,calorie)
+        logger.info("add_device_log, imei:%s,calorie:%s", pk.imei, pk.calorie)
 
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy"),
@@ -1078,17 +1080,19 @@ class TerminalHandler:
                 if uid is None:
                     logger.warning("imei:%s uid not find", imei)
                     continue
-                msg = push_msg.new_device_off_line_msg()
+                location_info = yield self.pet_dao.pet_info(["pet_id"])
+                locator_status = location_info.get("locator_status", terminal_packets.LOCATOR_STATUS_MIXED )
+                msg_ios = push_msg.new_device_off_line_msg(locator_status, push_msg.CT_IOS)
+                msg_android = push_msg.new_device_off_line_msg(locator_status, push_msg.CT_ANDROID)
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )
                 try:
                     yield self.msg_rpc.push_android(uids=str(uid),
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=1)
-                    # yield self.msg_rpc.push_ios(uids=str(uid), payload=msg)
-                    # yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg,
-                    #                                         extra={"type": "offline"})
+                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg_ios,
+                                                             extra={"type": "offline"})
                     logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
                 except Exception, e:
                     logger.exception(e)
