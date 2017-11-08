@@ -9,9 +9,9 @@ def android_msg(msg):
 def ios_msg(msg):
     new_msg = {}
     if msg.has_key("data"):
-        for k,v in msg:
+        for k,v in msg.items():
             if k == "data":
-                for k1,v1 in v:
+                for k1,v1 in v.items():
                     new_msg[k1] = v1
             else:
                 new_msg[k] = v
