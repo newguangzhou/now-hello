@@ -13,7 +13,9 @@ from terminal_base import terminal_proto, terminal_commands, terminal_packets, u
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
-from lib.type_defines import *
+#from lib.type_defines import *
+
+from trunk.src.appserver.lib import type_defines
 
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
 logger = logging.getLogger(__name__)
@@ -283,6 +285,7 @@ class TerminalHandler:
         radius2 = -1
         radius3 = -1
         station_status = 0#基站信号是否正常  0:正常  1：信号异常(信号差)
+        location_info = {}
 
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_GPS:
 
