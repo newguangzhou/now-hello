@@ -14,6 +14,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
 from lib import type_defines
+from lib import error_codes
 
 
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
@@ -483,29 +484,37 @@ class TerminalHandler:
             yield self.new_device_dao.report_wifi_info(pk.imei,
                                                        pk.location_info.mac)
 
-        #紧急搜索模式下判断是否需要开启GPS
-        device_setting = self.device_setting_mgr[pk.imei]
-        device_setting.reload()
-        if pet_info is not None and pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:
+        if pet_info is not None:
+            #紧急搜索模式下判断是否需要开启GPS
+            device_setting = self.device_setting_mgr[pk.imei]
+            device_setting.reload()
+            if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:
             #紧急搜索状态
-            if radius > 80 :
-                #定位误差>80米
-                if device_setting["gps_enable"] == type_defines.GPS_OFF:
-                    #GPS没有开
-                    device_setting["gps_enable"] = type_defines.GPS_ON
-                    yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-            else:
-                #定位<80米
-                if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-                    #混合定位模式
-                    if device_setting["gps_enable"] == type_defines.GPS_ON:
-                        #GPS已开启
-                        device_setting["gps_enable"] = type_defines.GPS_OFF
-                        yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-        else:#不在紧急搜索状态
-            if device_setting["gps_enable"] == type_defines.GPS_ON:
-                device_setting["pgs_enable"] = type_defines.GPS_OFF
-                yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+                if radius > 80 :
+                    #定位误差>80米
+                    if device_setting["gps_enable"] == type_defines.GPS_OFF:
+                        #GPS没有开
+                        device_setting["gps_enable"] = type_defines.GPS_ON
+                        res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+                        if res["status"] == error_codes.EC_SUCCESS:
+                            device_setting.save()
+                else:
+                    #定位<80米
+                    if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                        #混合定位模式
+                        if device_setting["gps_enable"] == type_defines.GPS_ON:
+                            #GPS已开启
+                            device_setting["gps_enable"] = type_defines.GPS_OFF
+                            res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+                            if res["status"] == error_codes.EC_SUCCESS:
+                                device_setting.save()
+
+            else:#不在紧急搜索状态
+                if device_setting["gps_enable"] == type_defines.GPS_ON:
+                    device_setting["pgs_enable"] = type_defines.GPS_OFF
+                    res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+                    if res["status"] == error_codes.EC_SUCCESS:
+                        device_setting.save()
         raise gen.Return(True)
 
     @gen.coroutine

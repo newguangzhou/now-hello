@@ -89,9 +89,6 @@ if __name__ == '__main__':
     msg_rpc = MsgRPC(SysConfig.current().get(sys_config.SC_MSG_RPC_URL))
 
     term_rpc = terminal_rpc.TerminalRPC(SysConfig.current().get(sys_config.SC_TERMINAL_RPC_URL))
-    device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
-        NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)
-    )
     handler = terminal_handler.TerminalHandler(
         conn_mgr,
         debug,
@@ -102,7 +99,8 @@ if __name__ == '__main__':
         new_device_dao=NewDeviceDAO.new(
             mongo_meta=mongo_conf.op_log_mongo_meta),
         msg_rpc=msg_rpc,
-        device_setting_mgr = device_setting_mgr,
+        device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
+            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)),
         unreply_msg_mgr=unreply_msg_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr
         terminal_rpc = term_rpc
@@ -126,6 +124,8 @@ if __name__ == '__main__':
         broadcastor=broadcastor,
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,
+        device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
+            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)),
         conn_mgr=conn_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr,
         op_log_dao=OPLogDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta), )

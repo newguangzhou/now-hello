@@ -5,7 +5,10 @@ import terminal_proto
 
 class CommandException(Exception):
     def __init__(self, message, *args):
-        self._msg = message % tuple(args)
+        if len(args) > 0:
+            self._msg = message % tuple(args)
+        else:
+            self._msg = message
 
     def __str__(self):
         return self._msg
@@ -37,12 +40,13 @@ class Params:
 
         #协议格式:
         #    005,0#1#2#3#4#5#6#7#8#9#10#11
+        print "command data:",data
         out_segs = data.split(",")
         if len(out_segs) != 2 or out_segs[0] != "005":
-            raise CommandException("Invalid params command:".join(data))
+            raise CommandException("Invalid params command:",data)
         segs = out_segs[1].split("#")
         if len(segs) != 11:
-            raise CommandException("Invalid params command:".join(data) )
+            raise CommandException("Invalid params command:",data )
 
         self["report_time"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[0]).Value()
