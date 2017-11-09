@@ -113,6 +113,17 @@ class TerminalHandler:
                     if imei is not None:
                         self._OnOpLog("[]", imei)
                         self.imei_timer_mgr.add_imei(imei)
+                    else:
+                        #短心跳的imei，发送J13
+                        imei="000000000000000"
+                        pk = terminal_packets.GetLocationAck(terminal_proto.GenSN(), imei)
+                        send_data = str(pk)
+                        ret = yield self.conn_mgr.Send(conn_id, send_data)
+                        self._OnOpLog("s2c send_data:%s peer:%s ret:%s"
+                                      %(pk.orgin_data(),conn.GetPeer(),ret,), imei)
+                        logger.debug(
+                            "s2c send_data, pk=\"%s\" id=%u peer=%s ret:%s",
+                            send_data, conn_id, conn.GetPeer(),ret)
                     continue
                 logger.info(
                     "Receive a terminal packet, header=\"%s\" body=\"%s\" id=%u peer=%s",
