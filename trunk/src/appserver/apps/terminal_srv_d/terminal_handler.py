@@ -1109,15 +1109,15 @@ class TerminalHandler:
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )
-                try:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    payload=msg_android,
-                                                    pass_through=1)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg_ios,channel=2,
-                                                             extra={"type": "offline"})
-                    logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
-                except Exception, e:
-                    logger.exception(e)
+                # try:
+                #     yield self.msg_rpc.push_android(uids=str(uid),
+                #                                     payload=msg_android,
+                #                                     pass_through=1)
+                #     yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg_ios,channel=2,
+                #                                              extra={"type": "offline"})
+                #     logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
+                # except Exception, e:
+                #     logger.exception(e)
 
             else:
                 logger.warning("imei:%s uid not find", imei)

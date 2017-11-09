@@ -64,7 +64,8 @@ class GetPetStatusInfo(HelperHandler):
                 return
             res["pet_status"] = info.get("pet_status",0)
             res["pet_is_in_home"]=info.get("pet_is_in_home",1)
-            res["device_status"]=info.get("device_status",1)
+            # res["device_status"]=info.get("device_status",1)
+            res["device_status"] = 1
             res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
             res["outdoor_on_off"]=info.get("outdoor_on_off",0)
 
