@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 from lib import utils
 from lib import push_msg
-#from lib import terminal_rpc
+from lib import terminal_rpc
 LOW_BATTERY = 25
 ULTRA_LOW_BATTERY = 15
 
@@ -61,6 +61,7 @@ class TerminalHandler:
 
         self.terminal_proto_guarder = {}
         self.terminal_rpc = kwargs.get("terminal_rpc",None)
+        self.device_setting_mgr = kwargs.get("device_setting_mgr", None)
 
     def OnOpen(self, conn_id):
         conn = self.conn_mgr.GetConn(conn_id)
@@ -515,20 +516,26 @@ class TerminalHandler:
 
         #紧急搜索模式下判断是否需要开启GPS
         if pet_info is not None and pet_info.get("pet_status",0) == PETSTATUS_FINDING:
-            print "imei:",pk.imei,"radius=",radius 
-            if radius > 80:
-                #定位误差>80米
-                msg = terminal_commands.Params()
-                msg.gps_enable = GPS_ON
-                msg.report_time = 1
-                yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
-                print "setGPS imei:",pk.imei,"ON"
+            device_setting = self.device_setting_mgr[pk.imei]
+            device_setting.reload()
+            cur  = datetime.datetime.now()
+
+            if device_setting["gps_enable"] == GPS_ON and \
+                            (cur - device_setting["update_time"]).seconds > 10*60 and \
+                    a:
+
+
+                device_setting["gps_enable"] = GPS_OFF
+                self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
             else:
-                msg = terminal_commands.Params()
-                msg.gps_enable = GPS_OFF
-                msg.report_time = 1
-                yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
-                print "setGPS imei:",pk.imei,"OFF"
+                if radius > 80 :
+                    if device_setting["gps_enable"] == GPS_OFF:
+                        #定位误差>80米
+                        device_setting["gps_enable"] = GPS_ON
+                        self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+                else:
+                    device_setting["gps_enable"] = GPS_OFF
+                    self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
 
         raise gen.Return(True)
 
