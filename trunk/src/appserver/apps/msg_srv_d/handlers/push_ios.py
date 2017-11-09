@@ -31,23 +31,43 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
         if uids == "":
             res["status"] = error_codes.EC_INVALID_ARGS
         else:
-            desc = self.get_str_arg("desc")
-
-            payload = self.get_str_arg("payload")
-            extra=self.get_str_arg("extra")
-            push_type = self.get_argument("push_type", "alias")
-            if push_type == "alias":
-                yield self.send_to_alias_ios(uids, desc, payload)
-            elif push_type == "user_account":
-                yield self.send_to_useraccount_ios(uids,payload, {"type":extra})
+            channel = 0
+            desc=""
+            payload=""
+            extra=""
+            push_type=""
+            try:
+                desc = self.get_str_arg("desc")
+                try:
+                    channel = int(self.get_argument("channel"))
+                except Exception,e:
+                    pass
+                payload = self.get_str_arg("payload")
+                extra = self.get_str_arg("extra")
+                push_type = self.get_argument("push_type", "alias")
+            except Exception, e:
+                logging.warning("PushIOS, invalid args, %s %s", self.dump_req(),
+                                self.dump_exp(e))
+                res["status"] = error_codes.EC_INVALID_ARGS
+                self.res_and_fini(res)
+                return
+            try:
+                if push_type == "alias":
+                    yield self.send_to_alias_ios(uids, desc, payload)
+                elif push_type == "user_account":
+                    yield self.send_to_useraccount_ios(uids,payload, eval(extra),channel)
+            except Exception, e:
+                logging.warning("PushIOS, xmpush-error, %s %s", self.dump_req(),
+                            self.dump_exp(e))
 
         self.res_and_fini(res)
         return
 
     @run_on_executor
-    def send_to_useraccount_ios(self, str_uids, payload, extra):
+    def send_to_useraccount_ios(self, str_uids, payload, extra,channel):
         xiaomi_push2 = self.settings["xiaomi_push2"]
-        return xiaomi_push2.send_to_useraccount_ios(str_uids, payload, extra)
+        return  xiaomi_push2.send_to_useraccount_ios(str_uids, payload, extra,channel)
+
 
     @run_on_executor
     def send_to_alias_ios(self, str_uids, desc, extras):

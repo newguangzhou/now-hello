@@ -31,7 +31,7 @@ class TerminalRPC:
     @gen.coroutine
     def call(self, api, **args):
         body = args
-        print self._apis[api]
+        #print self._apis[api]
         http_client = AsyncHTTPClient()
         res = yield http_client.fetch(self._apis[api],
                                       method="POST",
@@ -50,5 +50,6 @@ class TerminalRPC:
 
     @gen.coroutine
     def send_command_params(self, **args):
+        logging.info("send_command_params:%s",args)
         ret = yield self.call("send_command_params", **args)
         raise gen.Return(ret)

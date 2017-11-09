@@ -12,9 +12,7 @@ from tornado.web import Application, url
 
 import tornado.options
 from tornado.options import define, options
-
 from lib.console import Console
-from lib.pyloader import PyLoader
 from lib.auth_dao import AuthDAO
 from lib.user_dao import UserDAO
 from lib.pet_dao import PetDAO
@@ -27,6 +25,8 @@ from lib.new_device_dao import NewDeviceDAO
 from lib.gid_rpc import GIDRPC
 from lib.msg_rpc import MsgRPC
 from lib.terminal_rpc import TerminalRPC
+from configs.mongo_config import MongoConfig2
+from lib.config import *
 support_setptitle = True
 try:
     import setproctitle
@@ -34,27 +34,26 @@ except:
     support_setptitle = False
 
 import handlers
-
-define("debug_mode", 0, int,
+proctitle = "user_srv_d"
+conf = loadJsonConfig()
+proc_conf = conf[proctitle]
+debug_mode=conf["debug_mode"]
+define("debug_mode", conf["debug_mode"], int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", 9100, int, "Listen port, default is 9100")
-define("address", "0.0.0.0", str, "Bind address, default is 127.0.0.1")
-define("console_port", 9110, int, "Console listen port, default is 9110")
+define("port", proc_conf["port"], int, "Listen port, default is 9100")
+define("address", proc_conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", proc_conf["console_port"], int, "Console listen port, default is 9110")
 
 # Parse commandline
 tornado.options.parse_command_line()
 
 # Init pyloader
-pyloader = PyLoader("config")
-conf = pyloader.ReloadInst("Config")
+mongo_conf = MongoConfig2(conf["mongodb"])
 
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig",
-                                       debug_mode=options.debug_mode)
 
 # Set process title
 if support_setptitle:
-    setproctitle.setproctitle(conf.proctitle)
+    setproctitle.setproctitle(proctitle)
 
 # Init web application
 webapp = Application(
@@ -100,13 +99,11 @@ webapp = Application(
     ],
     autoreload=True,
     debug=True,
-    pyloader=pyloader,
     user_dao=UserDAO.new(mongo_meta=mongo_conf.user_mongo_meta),
     global_dao=GlobalDAO.new(mongo_meta=mongo_conf.global_mongo_meta),
     auth_dao=AuthDAO.new(mongo_meta=mongo_conf.auth_mongo_meta),
     pet_dao=PetDAO.new(mongo_meta=mongo_conf.pet_mongo_meta),
     device_dao=NewDeviceDAO.new(mongo_meta=mongo_conf.pet_mongo_meta),
-
     appconfig=conf, )
 
 
@@ -118,7 +115,7 @@ class _UserSrvConsole(Console):
         elif len(cmd) == 0:
             pass
         elif len(cmd) == 1 and cmd[0] == "reload-config":
-            newconf = pyloader.ReloadInst("Config")
+            newconf = loadJsonConfig()
             webapp.settings["appconfig"] = newconf
             webapp.settings["gid_rpc"] = GIDRPC(newconf.gid_rpc_url)
             self.send_response(stream, "done")

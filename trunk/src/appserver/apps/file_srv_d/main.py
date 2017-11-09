@@ -15,32 +15,32 @@ import tornado.options
 from tornado.options import define, options
 
 from lib.console import Console
-from lib.pyloader import PyLoader
 from lib.auth_dao import AuthDAO
 from lib.files_dao import FilesDAO
 from lib.user_dao import UserDAO
 from lib.sys_config import SysConfig
+from configs.mongo_config import MongoConfig2
+
 
 import handlers.user.upload_logo
 import handlers.get
-
-define("debug_mode", 0, int, "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", 9700, int, "Listen port, default is 9700")
-define("address", "0.0.0.0", str, "Bind address, default is 127.0.0.1")
-define("console_port", 9710, int, "Console listen port, default is 9710")
+from lib.config import loadJsonConfig
+proctitle = "file_srv_d"
+conf =  loadJsonConfig()
+proc_conf = conf[proctitle]
+define("debug_mode",conf["debug_mode"] , int,"Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
+define("port", proc_conf["port"], int, "Listen port, default is 9700")
+define("address", proc_conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", proc_conf["console_port"], int, "Console listen port, default is 9710")
 
 # Parse commandline
 tornado.options.parse_command_line()
 
-# Init pyloader
-pyloader = PyLoader("config")
-conf = pyloader.ReloadInst("Config")
-
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig", debug_mode = options.debug_mode)
+debug_mode=conf["debug_mode"]
+mongo_conf = MongoConfig2(conf["mongodb"])
 
 # Set process title
-setproctitle.setproctitle(conf.proctitle)
+setproctitle.setproctitle(proctitle)
 
 # Init web application
 webapp = Application(
@@ -49,7 +49,6 @@ webapp = Application(
          (r"/file/get", handlers.get.Get),
         ],
         autoreload = False,
-        pyloader = pyloader,
         files_dao = FilesDAO.new(mongo_meta = mongo_conf.files_mongo_meta),
         auth_dao = AuthDAO.new(mongo_meta = mongo_conf.auth_mongo_meta),
         user_dao = UserDAO.new(mongo_meta = mongo_conf.user_mongo_meta),

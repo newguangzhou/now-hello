@@ -57,14 +57,19 @@ class GetActivityInfo(HelperHandler):
 
         res_info = yield pet_dao.get_sport_info(pet_id, start_date, end_date)
 
-        pet_info = yield pet_dao.get_user_pets(uid,("target_energy","weight","sex"))
+        pet_info = yield pet_dao.get_user_pets(uid,("target_energy","weight","sex","bind_day","old_calorie"))
+        logging.debug("GetActivityInfo, pet_info:%s", pet_info)
         target_amount=0
         weight=15
         sex=1
+        bind_day = 0
+        old_calorie = 0
         if pet_info is not None:
             target_amount = pet_info.get("target_energy",0)
             weight=pet_info.get("weight",15)
             sex=pet_info.get("sex",1)
+            old_calorie = pet_info.get("old_calorie",0)
+            bind_day = pet_info.get("bind_day",0)
         #print res_info
         res["data"] = []
         if res_info is not None:
@@ -74,7 +79,16 @@ class GetActivityInfo(HelperHandler):
                 date_data["date"] = utils.date2str(item["diary"].date())
                 date_data["target_amount"] = target_amount
                 #date_data["reality_amount"] = '{:.1f}'.format(item["calorie"] /1000)
-                date_data["reality_amount"] ='{:.1f}'.format(utils.calorie_transform((item["calorie"] / 1000.0),weight,sex))
+                calorie_transform = item.get("calorie_transform",0)
+                if calorie_transform == 0:
+                    calorie = item["calorie"]
+                    if bind_day == item["diary"]:
+                        if calorie >= old_calorie:
+                            calorie = calorie - old_calorie
+                        else:
+                            calorie = 0
+                    calorie_transform = utils.calorie_transform((calorie / 1000.0), weight, sex)
+                date_data["reality_amount"] ='{:.1f}'.format(calorie_transform)
                 percentage = 0
                 if date_data["target_amount"] <= 0:
                     percentage = 0
@@ -93,7 +107,7 @@ class GetActivityInfo(HelperHandler):
             res["data"].append(date_data)
 
         # 成功
-        logging.debug("GetActivityInfo, success %s", self.dump_req())
+        logging.debug("GetActivityInfo, success %s,res:%s", self.dump_req(),res)
         self.res_and_fini(res)
 
     def post(self):

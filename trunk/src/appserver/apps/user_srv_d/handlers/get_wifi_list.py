@@ -67,7 +67,7 @@ class GetWifiList(HelperHandler):
                     logging.info("ten_minutes_wifi:%s",col )
                     tmp = utils.change_wifi_info(col["wifi_info"], True)
                     for item in tmp:
-                        if item["wifi_bssid"] not in all_wifi_names:
+                        if item["wifi_ssid"] not in all_wifi_names:
                             last_item = {}
                             last_item["wifi_ssid"] = item["wifi_ssid"]
                             last_item["wifi_bssid"] = item["wifi_bssid"]
@@ -81,7 +81,7 @@ class GetWifiList(HelperHandler):
                                 last_item["is_homewifi"] = 1
                             else:
                                 last_item["is_homewifi"] = 0
-                            all_wifi_names.append(item["wifi_bssid"])
+                            all_wifi_names.append(item["wifi_ssid"])
                             all_wifis.append(last_item)
                 logging.info("all_wifis:%s", all_wifis)
                 all_wifis.sort(key=lambda obj: int(obj.get('wifi_power')), reverse=True)

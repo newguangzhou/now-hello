@@ -36,7 +36,7 @@ class MsgRPC:
     @gen.coroutine
     def call(self, api, **args):
         body = args
-        print self._apis[api]
+        #print self._apis[api]
         http_client = AsyncHTTPClient()
         res = yield http_client.fetch(self._apis[api],
                                       method="POST",
@@ -62,25 +62,33 @@ class MsgRPC:
         raise gen.Return(ret)
 
     # default is alias
+    @gen.coroutine
     def push_android(self, **args):
         args["push_type"] = "alias"
-        return self.call("push_android",
+        ret=yield self.call("push_android",
                               **args)
+        raise gen.Return(ret)
     # defalut is alias
+    @gen.coroutine
     def push_ios(self, **args):
         args["push_type"] = "alias"
-        return self.call("push_ios", **args)
+        ret=yield self.call("push_ios", **args)
+        raise gen.Return(ret)
 
     # default is alias
+    @gen.coroutine
     def push_android_useraccount(self, **args):
         args["push_type"] = "user_account"
-        return self.call("push_android",
+        ret=yield self.call("push_android",
                          **args)
+        raise gen.Return(ret)
 
     # defalut is alias
+    @gen.coroutine
     def push_ios_useraccount(self, **args):
         args["push_type"] = "user_account"
-        return self.call("push_ios", **args)
+        ret=yield self.call("push_ios", **args)
+        raise gen.Return(ret)
 
     @gen.coroutine
     def push(self, uid, title, desc):

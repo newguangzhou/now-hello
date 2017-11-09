@@ -9,6 +9,8 @@ from tornado.concurrent import Future
 from tornado import gen
 import math
 from sys_config import DOG_CONFIG, DOG_NAME_CONFIG
+from math import radians, cos, sin, asin, sqrt
+
 
 
 def date2str(dt, no_time=False):
@@ -125,17 +127,17 @@ def new_mongo_row(row_define):
 
 
 def validate_mongo_row(row, row_define):
-    print row, row_define
+    #print row, row_define
     for (k, v) in row.items():
         if v is None:
             return (False, k)
 
         if not row_define.has_key(k):
-            print 1, k, v
+            logging.error("key:%s,value:%s not in row_define" ,k, v )
             return (False, k)
 
         if not isinstance(v, row_define[k][1]):
-            print 2, k, v, row_define[k][1], type(v)
+            logging.error("key:%s,value:%s type:%s isnotinstance %s" ,k, v, type(v), row_define[k][1])
             return (False, k)
     return (True, None)
 
@@ -226,7 +228,7 @@ def change_wifi_info(mac, need_deep=False):
     for item in tmp:
         if item != "":
             tmp2 = item.split(",")
-            print "tmp2:", tmp2
+            #print "tmp2:", tmp2
             if len(tmp2) != "":
                 info = {"wifi_ssid": tmp2[2], "wifi_bssid": tmp2[0]}
                 if need_deep:
@@ -263,9 +265,10 @@ def is_imei_valide(imei):
         return False
 
 def is_in_protected(outdoor_wifi,wifi_info):
-    for item in wifi_info:
-        if item["wifi_bssid"]==outdoor_wifi["outdoor_wifi_bssid"]:
-            return True
+    if outdoor_wifi is not None:
+        for item in wifi_info:
+            if item["wifi_bssid"]==outdoor_wifi["outdoor_wifi_bssid"]:
+                return True
     return False
 
 
@@ -422,6 +425,23 @@ def calorie_transform(raw_calorie,weight,sex,coefficient=1):
     elif sex==2:
         result_calorie=raw_calorie*weight*coefficient*1.10/(1.29*15.00)
     return result_calorie
+
+#计算高德地图两个经纬度之间的距离
+def haversine(lon1, lat1, lon2, lat2):  # 经度1，纬度1，经度2，纬度2 （十进制度数）
+    """ 
+    Calculate the great circle distance between two points  
+    on the earth (specified in decimal degrees) 
+    """
+    # 将十进制度数转化为弧度
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine公式
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # 地球平均半径，单位为公里
+    return c * r * 1000
 
 
 

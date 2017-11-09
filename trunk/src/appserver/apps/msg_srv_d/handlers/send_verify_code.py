@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from lib import error_codes
 from lib import xmq_web_handler
 
+proctitle="msg_srv_d"
 
 class SendVerify(xmq_web_handler.XMQWebHandler):
     executor = ThreadPoolExecutor(5)
@@ -23,7 +24,9 @@ class SendVerify(xmq_web_handler.XMQWebHandler):
     @run_on_executor
     def send_verify_code(self, code, product, phones):
         sender = self.settings["verify_sender"]
-        return sender(code, product, phones)
+        config = self.settings["appconfig"]
+        return sender(code, product, phones,config[proctitle]["dayu_appkey"],
+                      config[proctitle]["dayu_secret"])
 
     @gen.coroutine
     def _deal_request(self):

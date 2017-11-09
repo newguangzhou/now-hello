@@ -3,6 +3,47 @@
 from lib.mongo_dao_base import MongoMeta
 
 
+"""
+采用配置文件方式
+
+"""
+class MongoConfig2:
+    def __init__(self,config):
+        self.default_meta = MongoMeta(**config)
+        """
+        通用数据的mongodb配置
+        """
+        self.common_mongo_meta = self.default_meta
+        """
+        用户信息相关的mongodb配置
+        """
+        self.user_mongo_meta = self.default_meta
+        """
+        宠物信息相关的mongodb配置
+        """
+        self.pet_mongo_meta = self.default_meta
+        """
+        验证信息相关的mongodb配置
+        """
+        self.auth_mongo_meta = self.default_meta
+        """
+        全局相关的mongodb配置
+        """
+        self.global_mongo_meta = self.default_meta
+        """
+        审核相关的mongodb配置
+        """
+        self.audit_mongo_meta = self.default_meta
+        """
+        文件存储相关的mongodb配置
+        """
+        self.files_mongo_meta = self.default_meta
+        """"
+         文件存储相关的mongodb配置
+        """
+        self.op_log_mongo_meta = self.default_meta
+
+
 class MongoConfig:
     def __init__(self, *args, **kwargs):
         debug_mode = 0

@@ -10,7 +10,7 @@ from terminal_base import terminal_commands
 from tornado.web import asynchronous
 from tornado import gen
 from helper_handler import HelperHandler
-
+from lib.type_defines import *
 
 class PetFind(HelperHandler):
     @asynchronous
@@ -37,7 +37,7 @@ class PetFind(HelperHandler):
             self.res_and_fini(res)
             return
 
-        if find_status not in (1, 2):
+        if find_status not in (FINDSTATUS_FINDING, FINDSTATUS_FOUND):
             res["status"] = error_codes.EC_INVALID_ARGS
             self.res_and_fini(res)
             return
@@ -62,10 +62,9 @@ class PetFind(HelperHandler):
                 self.res_and_fini(res)
                 return
 
-            gps_enable = 1 if find_status == 1 else 0
             msg = terminal_commands.Params()
-            msg.gps_enable = gps_enable
-            if msg.gps_enable == 1:
+            if find_status == FINDSTATUS_FINDING:
+                terminal_rpc.send_j13(imei)
                 msg.report_time = 1
             else:
                 msg.report_time = 0
@@ -85,7 +84,7 @@ class PetFind(HelperHandler):
             self.res_and_fini(res)
             return
 
-        pet_status = 2 if find_status == 1 else 0
+        pet_status = PETSTATUS_FINDING if find_status == FINDSTATUS_FINDING else PETSTATUS_NORMAL
 
         try:
             yield pet_dao.update_pet_info(pet_id, pet_status=pet_status)
@@ -103,7 +102,7 @@ class PetFind(HelperHandler):
                                 self.dump_req())
                 return
             msg = terminal_commands.PetLocation()
-            if gps_enable:
+            if pet_status == PETSTATUS_FINDING:
                 msg.battery_threshold = 0
             else:
                 msg.battery_threshold = 25

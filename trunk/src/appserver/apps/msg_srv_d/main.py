@@ -15,8 +15,6 @@ import tornado.options
 from tornado.options import define, options
 
 from lib.console import Console
-from lib.pyloader import PyLoader
-
 from lib.auth_dao import AuthDAO
 
 from sms_ymrt import YMRTSMS
@@ -25,30 +23,36 @@ from mipush import MIPush
 from mipush2 import MiPush2
 from sms_dayu import send_verify,send_message
 import handlers
+from configs.mongo_config import MongoConfig2
+from lib.config import *
 
-define("debug_mode", 0, int,
+proctitle = "msg_srv_d"
+conf =loadJsonConfig()
+proc_conf = conf[proctitle]
+define("debug_mode",conf["debug_mode"] , int,
        "Enable debug mode, 1 is local debug, 2 is test, 0 is disable")
-define("port", 9200, int, "Listen port, default is 9200")
-define("address", "0.0.0.0", str, "Bind address, default is 127.0.0.1")
-define("console_port", 9210, int, "Console listen port, default is 9210")
+define("port", proc_conf["port"], int, "Listen port, default is 9200")
+define("address", proc_conf["address"], str, "Bind address, default is 127.0.0.1")
+define("console_port", proc_conf["console_port"], int, "Console listen port, default is 9210")
 
 # Parse commandline
 tornado.options.parse_command_line()
 
-# Init pyloader
-pyloader = PyLoader("config")
-conf = pyloader.ReloadInst("Config")
-
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig",
-                                       debug_mode=options.debug_mode)
-
+# # Init pyloader
 # Set process title
-setproctitle.setproctitle(conf.proctitle)
+setproctitle.setproctitle(proctitle)
 
 # # Init sms
 # sms_sender = NEXMOSMS(pyloader)
 
+# Init xiaomi_push
+debug_mode=conf["debug_mode"]
+mongo_conf = MongoConfig2(conf["mongodb"])
+xiaomi_push2=MiPush2(proc_conf["mipush_appsecret_android"],
+        proc_conf["mipush_pkg_name"],
+        proc_conf["mipush_appsecret_ios"],
+        proc_conf["mipush_bundle_id"]
+        )
 # Init web application
 webapp = Application(
     [
@@ -57,20 +61,15 @@ webapp = Application(
         (r"/msg/push_android", handlers.PushAndrod),
         (r"/msg/push_all", handlers.PushAll),
         (r"/msg/push_ios", handlers.PushIOS),
-        (r"/msg/push", handlers.Push)
     ],
     autoreload=True,
     debug=True,
-    pyloader=pyloader,
     appconfig=conf,
     sms_registered=True,
     auth_dao=AuthDAO.new(mongo_meta=mongo_conf.auth_mongo_meta),
     sms_sender=send_message,
     verify_sender=send_verify,
-    xiaomi_push2= MiPush2(conf.mipush_appsecret_android, conf.mipush_pkg_name,
-                          conf.mipush_appsecret_ios, conf.mipush_bundle_id, True),
-    xiaomi_push=MIPush(conf.mipush_host, conf.mipush_appsecret_android,
-                       conf.mipush_pkg_name))
+    xiaomi_push2= xiaomi_push2)
 
 
 class _UserSrvConsole(Console):
@@ -83,8 +82,10 @@ class _UserSrvConsole(Console):
         elif len(cmd) == 1 and cmd[0] == "reload-config":
             conf = self.pyld.ReloadInst("Config")
             webapp.settings["appconfig"] = conf
-            mipush = MIPush(conf.mipush_host, conf.mipush_appsecret,
-                           conf.mipush_pkg_name)
+            proc_conf = conf[proctitle]
+            mipush = MIPush(proc_conf["mipush_host"],
+                            proc_conf["mipush_appsecret"],
+                           proc_conf["mipush_pkg_name"])
             webapp.settings["xiaomi_push"] = mipush
             self.send_response(stream, "done")
         else:

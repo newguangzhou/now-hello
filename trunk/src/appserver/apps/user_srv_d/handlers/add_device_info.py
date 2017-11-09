@@ -27,11 +27,14 @@ class AddDeviceInfo(HelperHandler):
         conf = self.settings["appconfig"]
         terminal_rpc = self.settings["terminal_rpc"]
         res = {"status": error_codes.EC_SUCCESS}
+        custom_headers = self.custom_headers()
+
 
         uid = None
         token = None
         imei = None
         device_name = None
+        x_os_int=23
         try:
             uid = int(self.get_argument("uid"))
             token = self.get_argument("token")
@@ -41,6 +44,10 @@ class AddDeviceInfo(HelperHandler):
 
             imei = self.get_argument("imei")
             device_name = self.get_argument("device_name")
+            try:
+                x_os_int=custom_headers.get("x_os_int",23)
+            except Exception,e:
+                pass
         except Exception, e:
             logging.warning("AddDeviceInfo, invalid args, %s %s",
                             self.dump_req(), str(e))
@@ -61,10 +68,16 @@ class AddDeviceInfo(HelperHandler):
             res["status"] = error_codes.EC_SEND_CMD_FAIL
             self.res_and_fini(res)
             return
-
+        bind_day = datetime.datetime.combine(
+            datetime.date.today(),datetime.time.min)
+        cur = datetime.datetime.now()
+        last_device_log = yield device_dao.get_log_by_imei_before_time(imei, cur)
+        old_calorie = 0
+        if last_device_log is not None:
+            old_calorie = last_device_log["calorie"]
         try:
             pet_id = int(time.time() * -1000)
-            bind_res = yield pet_dao.bind_device(uid, imei, pet_id)
+            bind_res = yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie,x_os_int)
         except pymongo.errors.DuplicateKeyError, e:
             res["status"] = error_codes.EC_EXIST
             try:

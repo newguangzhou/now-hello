@@ -27,7 +27,7 @@ def convert_coordinate(locations_array, coordsys):
         respone = urllib2.urlopen(GAODE_CONVERT_COORDINATE_URL, data, 5)
         response_data = respone.read()
         logger.debug("data:%s convert_coordinate :%s", data, response_data)
-        print response_data
+        #print response_data
         ret_json = json.loads(response_data)
     except Exception, e:
         logger.exception(e)
@@ -47,7 +47,7 @@ def get_data_from_gaode(data):
         respone = urllib2.urlopen(GAODE_POSTION_URL, data, 5)
         response_data = respone.read()
         logger.debug("data:%s get_data_from_gaode :%s", data, response_data)
-        print response_data
+        #print response_data
         ret_json = json.loads(response_data)
     except Exception, e:
         logger.exception(e)

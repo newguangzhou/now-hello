@@ -30,14 +30,13 @@ from test_handler import CloseTcp
 from lib.msg_rpc import MsgRPC
 from lib.sys_config import SysConfig
 from lib import sys_config
-
+from configs.mongo_config import MongoConfig2
+from lib.config import *
+from lib import terminal_rpc
 support_setptitle = True
-ptitle = "terminal_srv_d"
+proctitle = "terminal_srv_d"
 verbose = False
 logrootdir = "./logs/"
-listen_port = 5050
-debug = False
-http_listen_port = 5052
 try:
     import setproctitle
 except:
@@ -46,8 +45,15 @@ except:
 import logging
 
 logger = logging.getLogger(__name__)
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig", debug_mode=debug)
+
+conf =  loadJsonConfig()
+proc_conf = conf[proctitle]
+
+listen_port = proc_conf["listen_port"]
+debug = False
+http_listen_port = proc_conf["http_listen_port"]
+debug_mode=conf["debug_mode"]
+mongo_conf = MongoConfig2(conf["mongodb"])
 
 # Parse options
 #def Usage():
@@ -55,7 +61,7 @@ mongo_conf = mongo_pyloader.ReloadInst("MongoConfig", debug_mode=debug)
 
 # Set process title
 if support_setptitle:
-    setproctitle.setproctitle(ptitle)
+    setproctitle.setproctitle(proctitle)
 else:
     logger.warning(
         "System not support python setproctitle module, please check!!!")
@@ -82,6 +88,7 @@ if __name__ == '__main__':
     IOLoop.current().run_sync(_async_init)
     msg_rpc = MsgRPC(SysConfig.current().get(sys_config.SC_MSG_RPC_URL))
 
+    term_rpc = terminal_rpc.TerminalRPC(SysConfig.current().get(sys_config.SC_TERMINAL_RPC_URL))
     handler = terminal_handler.TerminalHandler(
         conn_mgr,
         debug,
@@ -94,6 +101,7 @@ if __name__ == '__main__':
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr
+        terminal_rpc = term_rpc
     )
 
     conn_mgr.CreateTcpServer("", listen_port, handler)

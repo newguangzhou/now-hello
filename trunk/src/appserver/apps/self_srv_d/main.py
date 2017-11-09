@@ -9,13 +9,12 @@ from tornado.web import Application
 
 import tornado.options
 
-from lib.pyloader import PyLoader
 from lib.op_log_dao import OPLogDAO
 from lib.sys_config import SysConfig
-
 from tornado.ioloop import IOLoop
-
+from lib.config import *
 from lib import utils
+from configs.mongo_config import MongoConfig2
 
 
 support_setptitle = True
@@ -41,8 +40,8 @@ else:
         "System not support python setproctitle module, please check!!!")
 
 
-mongo_pyloader = PyLoader("configs.mongo_config")
-mongo_conf = mongo_pyloader.ReloadInst("MongoConfig", debug_mode=debug)
+conf = loadJsonConfig()
+mongo_conf = MongoConfig2(conf["mongodb"])
 
 @gen.coroutine
 def _async_init():

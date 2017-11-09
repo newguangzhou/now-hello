@@ -50,6 +50,8 @@ _PET_INFOS_TB_ROW_DEFINE = {
     "device_os_int": (23, int),  # android 设备os  int 值
     "mobile_num": None,  # 手机号码
     "agree_policy":(0,int), #0是不同意，1是同意
+    "old_calorie":(0,int),#设备绑定前的卡路里读数
+    "bind_day":(None,datetime.datetime) #绑定日期
 }
 
 """
@@ -79,6 +81,7 @@ PET_SPORT_TB_ROW_DEFINE = {
     "distance": (0, int),
     "target_energy": (0,float),
     "calorie": (0, int),
+    "calorie_transform": (0, int),
     #"location"
 }
 """

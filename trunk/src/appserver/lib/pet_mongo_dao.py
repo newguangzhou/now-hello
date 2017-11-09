@@ -169,13 +169,14 @@ class PetMongoDAO(MongoDAOBase):
         raise gen.Return(ret)
 
     @gen.coroutine
-    def bind_device(self, uid, imei, pet_id):
+    def bind_device(self, uid, imei, pet_id,bind_day,old_calorie,x_os_int):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             # res = tb.insert_one({"uid": uid,"device_imei": imei,"pet_id":pet_id})
-            info={"device_imei": imei,"pet_id":pet_id}
+            info={"device_imei": imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int}
             res=tb.update_one({"uid": uid}, {"$set": info},
                        upsert=True)
+            logging.info("bind_device:%s, %s", imei, info)
             return res
 
         ret = yield self.submit(_callback)
@@ -237,6 +238,7 @@ class PetMongoDAO(MongoDAOBase):
             row["step_count"] = sport_data["step_count"]
             row["distance"] = sport_data["distance"]
             row["calorie"] = sport_data["calorie"]
+            row["calorie_transform"] = sport_data["calorie_transform"]
             row["target_energy"] = sport_data["target_energy"]
             tb.update_one({"pet_id": pet_id,
                            "diary": sport_data["diary"]}, {"$set": row},
