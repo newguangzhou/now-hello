@@ -32,6 +32,9 @@ DEVICE_TB_ROW_DEFINE = {
     "status": (0, int),  #报警状态
     "battery_status":(0,int), #电量状态 0 正常，1，低电量  2，超低电量
     "server_recv_time": (None, int),
+    "setting": (u"", unicode),#保存设备配置信息
+    "update_time": (None, datetime.datetime),#设备上一次更改配置的时间
+    "location_data": ([], list)
     #"location"
 }
 """
