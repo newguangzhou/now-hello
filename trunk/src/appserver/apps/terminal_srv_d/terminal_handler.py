@@ -126,19 +126,6 @@ class TerminalHandler:
                 logger.info(
                     "Receive a terminal packet, header=\"%s\" body=\"%s\" id=%u peer=%s",
                     str(header), body, conn_id, conn.GetPeer())
-                imei = self._broadcastor.get_imei_by_conn(conn_id)
-                if imei is not None:
-                    msgs = self.unreply_msg_mgr.get_un_reply_msg_and_count(imei)
-                    logger.info("_OnHeartbeatReq  get imei:%s unreply_msgs:%s", imei,
-                                str(msgs))
-                    for msg in msgs:
-                        if msg[2]==0:
-                            ret = yield self._broadcastor.send_msg_multicast((imei,),
-                                                                         msg[1])
-                            ret_str = "send ok" if ret else "send fail"
-                            self._OnOpLog("s2c on connected retry  send_data:%s ret:%s" %
-                                      (msg, ret_str), imei)
-
 
                 # Dispatch
                 disp_status = True
@@ -630,9 +617,17 @@ class TerminalHandler:
         # Ack
         ack = terminal_packets.HeatbeatAck(header.sn)
         yield self._send_res(conn_id, ack, pk.imei, peer)
-
-            # logger.info("_OnHeartbeatReq s2c send_data:%s ret:%s imei:%s",
-            #             msg[1], ret_str, pk.imei)
+        msgs = self.unreply_msg_mgr.get_un_reply_msg(pk.imei)
+        logger.info("_OnHeartbeatReq  get imei:%s unreply_msgs:%s", pk.imei,
+                    str(msgs))
+        for msg in msgs:
+            ret = yield self._broadcastor.send_msg_multicast((pk.imei,),
+                                                             msg[1])
+            ret_str = "send ok" if ret else "send fail"
+            self._OnOpLog("s2c on connected retry  send_data:%s ret:%s" %
+                          (msg, ret_str), pk.imei)
+            logger.info("_OnHeartbeatReq s2c send_data:%s ret:%s imei:%s",
+                        msg[1], ret_str, pk.imei)
 
         raise gen.Return(True)
 

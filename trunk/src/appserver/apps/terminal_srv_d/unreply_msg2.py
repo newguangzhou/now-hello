@@ -75,22 +75,6 @@ class UnreplyMsgMgr2:
                     #del self.msg_dict[(imei, msg_type)]
 
         return msgs
-    def get_un_reply_msg_and_count(self, imei):
-        logger.debug("get_un_reply_msg imei:%s ", imei)
-
-        msgs = []
-
-        sub_imei_seq = self.imei_seq.get(imei, None)
-        if sub_imei_seq is not None:
-            msg_types = sub_imei_seq.values()
-            msg_types = set(msg_types)
-            for msg_type in msg_types:
-                msg_and_count = self.msg_dict.get((imei, msg_type), None)
-                if msg_and_count is not None:
-                    msgs.append((msg_and_count[2], msg_and_count[0],msg_and_count[1]))
-                    #del self.msg_dict[(imei, msg_type)]
-
-        return msgs
 
     def _get_msg_and_count_by_seq(self, imei, seq):
         logger.debug("_get_msg_and_count_by_seq imei:%s seq:%s", imei, seq)
