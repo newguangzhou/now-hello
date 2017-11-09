@@ -13,7 +13,7 @@ from terminal_base import terminal_proto, terminal_commands, terminal_packets, u
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
-from lib.type_defines import *
+from lib import type_defines
 
 
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 from lib import utils
 from lib import push_msg
-from lib import terminal_rpc
+#from lib import terminal_rpc
 LOW_BATTERY = 25
 ULTRA_LOW_BATTERY = 15
 
@@ -478,65 +478,34 @@ class TerminalHandler:
                         # 发送状态消息
                         if not is_outdoor_state:
                             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
-            # 在家离家逻辑判断
 
-
-            # if pet_info.get("outdoor_on_off",0) == 1 and pet_info.get("pet_status",0)!=2 and pet_info.get("outdoor_wifi",None) is not None:
-            #     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-            #         outdoor_wifi=pet_info.get("outdoor_wifi",None)
-            #         wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-            #         is_in_protected=utils.is_in_protected(outdoor_wifi,wifi_info)
-            #         self._SendOutdoorInOrOutProtected(pk.imei,is_in_protected)
-            #     else:
-            #         #离开保护区域
-            #         self._SendOutdoorInOrOutProtected(pk.imei, False)
-            # else:
-            #     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-            #         wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-            #         common_wifi = pet_info.get("common_wifi", None)
-            #         home_wifi = pet_info.get("home_wifi", None)
-            #         new_common_wifi = utils.get_new_common_wifi(
-            #         common_wifi, wifi_info, home_wifi)
-            #         uid = pet_info.get("uid", None)
-            #         if uid is not None:
-            #             is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
-            #                                       wifi_info)
-            #             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
-            #         yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
-            #                                             new_common_wifi)
-            #     elif pk.location_info.locator_status==terminal_packets.LOCATOR_STATUS_STATION:
-            #         home_location=pet_info.get("home_location")
-            #         if home_location is not None and len(lnglat)!=0:
-            #             disance=utils.haversine(float(home_location.get("longitude")),float(home_location.get("latitude")),float(lnglat[0]),float(lnglat[1]))
-            #             is_in_home=True if (disance<=radius*1.2) else False
-            #             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
             yield self.new_device_dao.report_wifi_info(pk.imei,
                                                        pk.location_info.mac)
 
         #紧急搜索模式下判断是否需要开启GPS
-        if pet_info is not None and pet_info.get("pet_status",0) == PETSTATUS_FINDING:
-            device_setting = self.device_setting_mgr[pk.imei]
-            device_setting.reload()
-            cur  = datetime.datetime.now()
-
-            if device_setting["gps_enable"] == GPS_ON and \
-                            (cur - device_setting["update_time"]).seconds > 10*60 and \
-                    a:
-
-
-                device_setting["gps_enable"] = GPS_OFF
-                self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+        device_setting = self.device_setting_mgr[pk.imei]
+        device_setting.reload()
+        if pet_info is not None and pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:
+            #紧急搜索状态
+            if radius > 80 :
+                #定位误差>80米
+                if device_setting["gps_enable"] == type_defines.GPS_OFF:
+                    #GPS没有开
+                    device_setting["gps_enable"] = type_defines.GPS_ON
+                    yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
             else:
-                if radius > 80 :
-                    if device_setting["gps_enable"] == GPS_OFF:
-                        #定位误差>80米
-                        device_setting["gps_enable"] = GPS_ON
-                        self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-                else:
-                    device_setting["gps_enable"] = GPS_OFF
-                    self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-
+                #定位<80米
+                if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                    #混合定位模式
+                    if device_setting["gps_enable"] == type_defines.GPS_ON:
+                        #GPS已开启
+                        device_setting["gps_enable"] = type_defines.GPS_OFF
+                        yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+        else:#不在紧急搜索状态
+            if device_setting["gps_enable"] == type_defines.GPS_ON:
+                device_setting["pgs_enable"] = type_defines.GPS_OFF
+                yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
         raise gen.Return(True)
 
     @gen.coroutine
@@ -1151,6 +1120,7 @@ class TerminalHandler:
             if int(tmp[4]) >= 20:
                 return 0
         return 1
+
 
 
 
