@@ -13,53 +13,65 @@ class CommandException(Exception):
 
 class Params:
     def __init__(self, *args, **kwargs):
-        self.report_time = 0  # 分时段上报间隔，以分钟位单位最大值为60
-        self.add_friend = 0
-        self.step_enable = 0
-        self.profile = 0
-        self.love = 0
-        self.remote_alert = ''
-        self.low_power = 0
-        self.sos = 0
-        self.take_off = 0
-        self.gps_enable = 0
-        self.step_target = 5000
+        self.item={}
+        self["report_time"] = 0  # 分时段上报间隔，以分钟位单位最大值为60
+        self["add_friend"] = 0
+        self["step_enable"] = 0
+        self["profile"] = 0
+        self["love"] = 0
+        self["remote_alert"] = ''
+        self["low_power"] = 0
+        self["sos"] = 0
+        self["take_off"] = 0
+        self["gps_enable"] = 0
+        self["step_target"] = 5000
         self._data = ""
-
+    def __getitem__(self,key):
+        if key == "":
+            return self.item
+        return self.item[key]
+    def __setitem__(self,key, value):
+        self.item[key] = value
     def Parse(self, data):
-        self._data = ""
-        segs = data.split(",")
-        if len(segs) != 11 or segs[0] != "005":
-            raise CommandException("Invalid params command")
+        self._data = data
 
-        self.report_time = terminal_proto.Field(
+        #协议格式:
+        #    005,0#1#2#3#4#5#6#7#8#9#10#11
+        out_segs = data.split(",")
+        if len(out_segs) != 2 or out_segs[0] != "005":
+            raise CommandException("Invalid params command:".join(data))
+        segs = out_segs[1].split("#")
+        if len(segs) != 11:
+            raise CommandException("Invalid params command:".join(data) )
+
+        self["report_time"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[0]).Value()
-        self.add_friend = terminal_proto.Field(
+        self["add_friend"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[1]).Value()
-        self.step_enable = terminal_proto.Field(
+        self["step_enable"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[2]).Value()
-        self.profile = terminal_proto.Field(
+        self["profile"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[3]).Value()
-        self.love = terminal_proto.Field(terminal_proto.INTEGER_FIELD).FromStr(
+        self["love"] = terminal_proto.Field(terminal_proto.INTEGER_FIELD).FromStr(
             segs[4]).Value()
-        self.remote_alert = terminal_proto.Field(
+        self["remote_alert"] = terminal_proto.Field(
             terminal_proto.STRING_FIELD).FromStr(segs[5]).Value()
-        self.low_power = terminal_proto.Field(
+        self["low_power"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[6]).Value()
-        self.sos = terminal_proto.Field(terminal_proto.INTEGER_FIELD).FromStr(
+        self["sos"] = terminal_proto.Field(terminal_proto.INTEGER_FIELD).FromStr(
             segs[7]).Value()
-        self.take_off = terminal_proto.Field(
+        self["take_off"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[8]).Value()
-        self.gps_enable = terminal_proto.Field(
+        self["gps_enable"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[9]).Value()
-        self.step_target = terminal_proto.Field(
+        self["step_target"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(segs[10]).Value()
 
     def __str__(self):
         return "005,%d#%d#%d#%d#%d#%s#%d#%d#%d#%d#%d" % (
-            self.report_time, self.add_friend, self.step_enable, self.profile,
-            self.love, self.remote_alert, self.low_power, self.sos,
-            self.take_off, self.gps_enable, self.step_target)
+            self["report_time"], self["add_friend"], self["step_enable"], self["profile"],
+            self["love"], self["remote_alert"], self["low_power"], self["sos"],
+            self["take_off"], self["gps_enable"], self["step_target"])
 
     def orgin_data(self):
         return self._data

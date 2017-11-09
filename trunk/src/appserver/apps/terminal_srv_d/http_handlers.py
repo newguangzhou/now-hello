@@ -186,6 +186,9 @@ class SendParamsCommandHandler(tornado.web.RequestHandler):
             ret = yield broadcastor.send_msg_multicast((imei, ), send_data)
             if ret:
                 ret_str = "send ok"
+                device_setting_mgr = self.settings["device_setting_mgr"]
+                device_setting_mgr[imei].parse(content)
+                device_setting_mgr[imei].save()
             else:
                 ret_str = "send fail"
                 res["status"] = error_codes.EC_SEND_CMD_FAIL
