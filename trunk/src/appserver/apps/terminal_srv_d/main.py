@@ -18,7 +18,7 @@ from tornado.web import Application, url
 from tornado import gen
 
 from terminal_base import conn_mgr2, broadcast, thread_trace, device_setting_mgr
-from lib.pyloader import PyLoader
+#from lib.pyloader import PyLoader
 from lib.op_log_dao import OPLogDAO
 from lib.new_device_dao import NewDeviceDAO
 from lib.pet_dao import PetDAO

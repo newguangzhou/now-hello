@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from lib import terminal_rpc
+#from lib import terminal_rpc
 import datetime
 import terminal_commands
 
