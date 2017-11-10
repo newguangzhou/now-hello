@@ -145,8 +145,10 @@ def validate_mongo_row(row, row_define):
 def validate_mongo_row_cols(row_define, **cols):
     for (k, v) in cols.items():
         if not row_define.has_key(k):
+            print "row:",k ," not define"
             return (False, k)
         if not isinstance(v, row_define[k][1]):
+            print "row:",k ,"v:",v," is not ", row_define[k][1],"but ",type(v)
             return (False, k)
     return (True, None)
 

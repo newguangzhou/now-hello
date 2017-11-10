@@ -499,33 +499,24 @@ class TerminalHandler:
             #紧急搜索模式下判断是否需要开启GPS
             device_setting = self.device_setting_mgr[pk.imei]
             device_setting.reload()#每次都读一下数据库，性能不佳，待优化
-            if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:
-            #紧急搜索状态
+            if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:#紧急搜索状态
+                #设置J01时间为1分钟
+                device_setting["report_time"]  = 1
                 if radius > 80 :
                     #定位误差>80米
-                    if device_setting["gps_enable"] == type_defines.GPS_OFF:
                         #GPS没有开
-                        device_setting["gps_enable"] = type_defines.GPS_ON
-                        res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-                        if res["status"] == error_codes.EC_SUCCESS:
-                            device_setting.save()
+                    device_setting["gps_enable"] = type_defines.GPS_ON
                 else:
                     #定位<80米
                     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
                         #混合定位模式
-                        if device_setting["gps_enable"] == type_defines.GPS_ON:
-                            #GPS已开启
-                            device_setting["gps_enable"] = type_defines.GPS_OFF
-                            res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-                            if res["status"] == error_codes.EC_SUCCESS:
-                                device_setting.save()
+                        device_setting["gps_enable"] = type_defines.GPS_OFF
 
             else:#不在紧急搜索状态
-                if device_setting["gps_enable"] == type_defines.GPS_ON:
-                    device_setting["pgs_enable"] = type_defines.GPS_OFF
-                    res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
-                    if res["status"] == error_codes.EC_SUCCESS:
-                        device_setting.save()
+                device_setting["report_time"]  =0
+                device_setting["pgs_enable"] = type_defines.GPS_OFF
+            device_setting.save()
+            #res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
         raise gen.Return(True)
 
     @gen.coroutine
