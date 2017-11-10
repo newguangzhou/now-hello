@@ -53,7 +53,7 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
                 return
             try:
                 if push_type == "alias":
-                    yield self.send_to_alias_ios(uids, desc, payload)
+                    yield self.send_to_alias_ios(uids, payload, eval(extra), channel)
                 elif push_type == "user_account":
                     yield self.send_to_useraccount_ios(uids,payload, eval(extra),channel)
             except Exception, e:
@@ -70,9 +70,9 @@ class PushIOS(xmq_web_handler.XMQWebHandler):
 
 
     @run_on_executor
-    def send_to_alias_ios(self, str_uids, desc, extras):
+    def send_to_alias_ios(self, str_uids, payload, extras, channel):
         xiaomi_push2 = self.settings["xiaomi_push2"]
-        return xiaomi_push2.send_to_alias_ios(str_uids,desc,extras)
+        return xiaomi_push2.send_to_alias_ios(str_uids,payload,extras, channel)
 
     def post(self):
         return self._deal_request()

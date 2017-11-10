@@ -53,6 +53,7 @@ class PushMessageCmd(HelperHandler):
         # yield msg_rpc.push_ios_useraccount(uids=str(uid),
         #                                    payload=payload)
         msg=None
+        payload = ""
         if push_type == "in_home":
             payload = "宠物现在回家了"
             msg={"type": "in_home"}
@@ -60,9 +61,7 @@ class PushMessageCmd(HelperHandler):
             payload = "宠物离开家了"
             msg ={"type":"out_home"}
 
-        yield msg_rpc.push_ios_useraccount(uids=str(uid),
-                                            payload=payload,
-                                            extra= json.dumps(msg, ensure_ascii=False, encoding="utf8"))
+        yield msg_rpc.push_ios(uids=str(uid),payload=payload,extra= json.dumps(msg, ensure_ascii=False, encoding="utf8"))
 
         # msg = push_msg.new_pet_not_home_msg()
 
