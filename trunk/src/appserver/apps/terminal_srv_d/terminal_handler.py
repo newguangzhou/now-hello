@@ -15,13 +15,12 @@ from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
 from lib.type_defines import *
 
-
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
 logger = logging.getLogger(__name__)
 
 from lib import utils
 from lib import push_msg
-#from lib import terminal_rpc
+from lib import terminal_rpc
 LOW_BATTERY = 25
 ULTRA_LOW_BATTERY = 15
 
@@ -379,6 +378,9 @@ class TerminalHandler:
                                                         payload=msg_android,
                                                         pass_through=1)
                         #channel:0,都推送（默认）；1，apns_only；2：connection_only
+                        msg = push_msg.ios_location_change_msg(
+                            "%.7f" % lnglat[1], "%.7f" % lnglat[0],
+                            int(time.mktime(locator_time.timetuple())), radius)
                         yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                                 payload="xmq",
                                                                 extra=msg_ios,
@@ -480,11 +482,12 @@ class TerminalHandler:
             elif pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_STATION:
                 home_location = pet_info.get("home_location")
                 if home_location is not None and len(lnglat) != 0:
-                    disance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
+                    distance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
                                           float(lnglat[0]), float(lnglat[1]))
-                    is_in_home = True if (disance <= radius * 1.2) else False
+                    is_in_home = True if (distance <= radius * 2) else False
                     pet_is_in_home = pet_info.get("pet_is_in_home", 1)
                     if (pet_is_in_home == 1 and not is_in_home):
+                        logging.debug("out-home*-imei:%s,radius:%s,distance:%s", pk.imei, radius, distance)
                         yield self.pet_dao.update_pet_info(
                             pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
                         # 发送状态消息
@@ -1088,7 +1091,6 @@ class TerminalHandler:
             pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
                                                        device_imei=imei)
             if pet_info is not None:
-
                 uid = pet_info.get("uid", None)
                 if uid is None:
                     logger.warning("imei:%s uid not find", imei)
@@ -1109,15 +1111,16 @@ class TerminalHandler:
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )
-                # try:
-                #     yield self.msg_rpc.push_android(uids=str(uid),
-                #                                     payload=msg_android,
-                #                                     pass_through=1)
-                #     yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg_ios,channel=2,
-                #                                              extra={"type": "offline"})
-                #     logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
-                # except Exception, e:
-                #     logger.exception(e)
+                try:
+                    # yield self.msg_rpc.push_android(uids=str(uid),
+                    #                                 payload=msg,
+                    #                                 pass_through=1)
+                    # yield self.msg_rpc.push_ios(uids=str(uid), payload=msg)
+                    # yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg,
+                    #                                         extra={"type": "offline"})
+                    logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
+                except Exception, e:
+                    logger.exception(e)
 
             else:
                 logger.warning("imei:%s uid not find", imei)
