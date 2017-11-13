@@ -1,15 +1,3 @@
-create_env.sh
-create_env_ali.sh
-docker-compose.yml
-Dockerfile
-/.idea/
-*.pyc
-*.swo
-*.swp
-*.log
-.idea/
-*.out
-*.html
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -114,3 +102,20 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+create_env.sh
+create_env_ali.sh
+docker-compose.yml
+Dockerfile
+/.idea/
+*.pyc
+*.swo
+*.swp
+*.log
+.idea/
+*.out
+*.html
+tags
+Pipfile
+Pipfile.lock
+config.json
+config.json.old
