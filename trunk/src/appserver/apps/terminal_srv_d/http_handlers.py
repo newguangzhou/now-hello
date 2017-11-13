@@ -188,7 +188,7 @@ class SendParamsCommandHandler(tornado.web.RequestHandler):
                 ret_str = "send ok"
             else:
                 ret_str = "send fail"
-                res["status"] = error_codes.EC_SEND_CMD_FAIL
+                # res["status"] = error_codes.EC_SEND_CMD_FAIL
             self._OnOpLog("s2c send_data:%s ret:%s" % (send_data, ret_str),
                           imei)
             unreply_msg_mgr = self.settings["unreply_msg_mgr"]

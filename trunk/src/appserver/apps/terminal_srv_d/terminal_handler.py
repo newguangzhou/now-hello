@@ -250,7 +250,7 @@ class TerminalHandler:
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
              "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
-             "pet_status","home_location","pet_is_in_home","weight","sex"),
+             "pet_status","home_location","pet_is_in_home","weight","sex","bind_day","old_calorie"),
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
@@ -470,13 +470,12 @@ class TerminalHandler:
             elif pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_STATION:
                 home_location = pet_info.get("home_location")
                 if home_location is not None and len(lnglat) != 0:
-                    disance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
+                    distance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
                                           float(lnglat[0]), float(lnglat[1]))
-                    is_in_home = True if (disance <= radius * 2) else False
+                    is_in_home = True if (distance <= radius * 2) else False
                     pet_is_in_home = pet_info.get("pet_is_in_home", 1)
-                    if (pet_is_in_home == 1 and not is_in_home) or (
-                            pet_is_in_home == 0 and is_in_home):
-                        logging.debug("imei:%s,radius:%s,distance:%s", pk.imei,radius,disance)
+                    if (pet_is_in_home == 1 and not is_in_home):
+                        logging.debug("out-home*-imei:%s,radius:%s,distance:%s", pk.imei, radius, distance)
                         yield self.pet_dao.update_pet_info(
                             pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
                         # 发送状态消息
@@ -1089,9 +1088,9 @@ class TerminalHandler:
                                              device_status=0
                                              )
                 try:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    payload=msg,
-                                                    pass_through=1)
+                    # yield self.msg_rpc.push_android(uids=str(uid),
+                    #                                 payload=msg,
+                    #                                 pass_through=1)
                     # yield self.msg_rpc.push_ios(uids=str(uid), payload=msg)
                     # yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg,
                     #                                         extra={"type": "offline"})
