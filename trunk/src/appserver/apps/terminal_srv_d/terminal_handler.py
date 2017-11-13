@@ -16,7 +16,6 @@ from get_location import get_location_by_wifi, get_location_by_bts_info, get_loc
 from lib import type_defines
 from lib import error_codes
 
-
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
 logger = logging.getLogger(__name__)
 
@@ -480,11 +479,12 @@ class TerminalHandler:
             elif pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_STATION:
                 home_location = pet_info.get("home_location")
                 if home_location is not None and len(lnglat) != 0:
-                    disance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
+                    distance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
                                           float(lnglat[0]), float(lnglat[1]))
-                    is_in_home = True if (disance <= radius * 1.2) else False
+                    is_in_home = True if (distance <= radius * 2) else False
                     pet_is_in_home = pet_info.get("pet_is_in_home", 1)
                     if (pet_is_in_home == 1 and not is_in_home):
+                        logging.debug("out-home*-imei:%s,radius:%s,distance:%s", pk.imei, radius, distance)
                         yield self.pet_dao.update_pet_info(
                             pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
                         # 发送状态消息
@@ -1062,7 +1062,6 @@ class TerminalHandler:
             pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
                                                        device_imei=imei)
             if pet_info is not None:
-
                 uid = pet_info.get("uid", None)
                 if uid is None:
                     logger.warning("imei:%s uid not find", imei)
@@ -1084,11 +1083,11 @@ class TerminalHandler:
                                              device_status=0
                                              )
                 try:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    payload=msg_android,
-                                                    pass_through=1)
-                    yield self.msg_rpc.push_ios(uids=str(uid), payload=msg_ios,channel=2,
-                                                             extra={"type": "offline"})
+                    #yield self.msg_rpc.push_android(uids=str(uid),
+                    #                               payload=msg_android,
+                    #                               pass_through=1)
+                    #yield self.msg_rpc.push_ios(uids=str(uid), payload=msg_ios,channel=2,
+                    #                                         extra={"type": "offline"})
                     logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
                 except Exception, e:
                     logger.exception(e)
@@ -1131,7 +1130,6 @@ class TerminalHandler:
             if int(tmp[4]) >= 20:
                 return 0
         return 1
-
 
 
 
