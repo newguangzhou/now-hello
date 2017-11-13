@@ -472,10 +472,11 @@ class TerminalHandler:
                 if home_location is not None and len(lnglat) != 0:
                     disance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
                                           float(lnglat[0]), float(lnglat[1]))
-                    is_in_home = True if (disance <= radius * 1.2) else False
+                    is_in_home = True if (disance <= radius * 2) else False
                     pet_is_in_home = pet_info.get("pet_is_in_home", 1)
                     if (pet_is_in_home == 1 and not is_in_home) or (
                             pet_is_in_home == 0 and is_in_home):
+                        logging.debug("imei:%s,radius:%s,distance:%s", pk.imei,radius,disance)
                         yield self.pet_dao.update_pet_info(
                             pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
                         # 发送状态消息
