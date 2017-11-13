@@ -378,9 +378,6 @@ class TerminalHandler:
                                                         payload=msg_android,
                                                         pass_through=1)
                         #channel:0,都推送（默认）；1，apns_only；2：connection_only
-                        msg = push_msg.ios_location_change_msg(
-                            "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                            int(time.mktime(locator_time.timetuple())), radius)
                         yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                                                                 payload="xmq",
                                                                 extra=msg_ios,
