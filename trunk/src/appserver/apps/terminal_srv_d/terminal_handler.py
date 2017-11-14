@@ -497,8 +497,7 @@ class TerminalHandler:
 
         if pet_info is not None:
             #紧急搜索模式下判断是否需要开启GPS
-            device_setting = self.device_setting_mgr[pk.imei]
-            device_setting.reload()#每次都读一下数据库，性能不佳，待优化
+            device_setting = self.device_setting_mgr.get_device_setting(pk.imei)
             if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:#紧急搜索状态
                 #设置J01时间为1分钟
                 device_setting["report_time"]  = 1
@@ -515,8 +514,8 @@ class TerminalHandler:
             else:#不在紧急搜索状态
                 device_setting["report_time"]  =0
                 device_setting["pgs_enable"] = type_defines.GPS_OFF
-            device_setting.save()
-            #res = yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
+            #device_setting.save()
+            yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
         raise gen.Return(True)
 
     @gen.coroutine

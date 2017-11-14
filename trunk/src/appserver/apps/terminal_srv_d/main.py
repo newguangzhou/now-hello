@@ -100,7 +100,7 @@ if __name__ == '__main__':
             mongo_meta=mongo_conf.op_log_mongo_meta),
         msg_rpc=msg_rpc,
         device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
-            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta),term_rpc),
+            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)),
         unreply_msg_mgr=unreply_msg_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr
         terminal_rpc = term_rpc
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,
         device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
-            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta),term_rpc),
+            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)),
         conn_mgr=conn_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr,
         op_log_dao=OPLogDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta), )
