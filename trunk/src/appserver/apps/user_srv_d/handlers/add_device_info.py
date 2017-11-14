@@ -77,7 +77,7 @@ class AddDeviceInfo(HelperHandler):
             old_calorie = last_device_log["calorie"]
         try:
             pet_id = int(time.time() * -1000)
-            bind_res = yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie,x_os_int)
+            yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie,x_os_int)
         except pymongo.errors.DuplicateKeyError, e:
             res["status"] = error_codes.EC_EXIST
             try:

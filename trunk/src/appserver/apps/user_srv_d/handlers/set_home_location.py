@@ -37,6 +37,9 @@ class SetHomeLocation(HelperHandler):
         res = {"status": error_codes.EC_SUCCESS}
         try:
             uid = int(self.get_argument("uid"))
+            pet_id = int(self.get_argument("pet_id"))
+            if pet_id == 0:
+                raise Exception("arg pet_id = 0")
             token = self.get_argument("token")
             st = yield self.check_token("SetHomeLocation", res, uid, token)
             if not st:
@@ -51,7 +54,7 @@ class SetHomeLocation(HelperHandler):
             return
 
         try:
-            set_res = yield pet_dao.set_home_location(uid, {"longitude": longitude,
+            set_res = yield pet_dao.set_home_location_by_petid(pet_id, {"longitude": longitude,
                                                         "latitude":
                                                             latitude})
             if set_res.matched_count <= 0:
@@ -59,6 +62,11 @@ class SetHomeLocation(HelperHandler):
                 res["status"] = error_codes.EC_SYS_ERROR
                 self.res_and_fini(res)
                 return
+
+            #切换控制设备
+            yield pet_dao.update_pet_info_by_uid(uid, choice = 0)
+            yield pet_dao.update_pet_info(pet_id, choice = 1)
+
         except Exception, e:
             logging.warning("SetHomeLocation, error, %s %s", self.dump_req(),
                             self.dump_exp(e))

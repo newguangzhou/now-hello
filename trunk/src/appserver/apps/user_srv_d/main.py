@@ -67,7 +67,11 @@ webapp = Application(
         (r"/user/set_home_wifi", handlers.SetHomeWifi),
         (r"/user/set_home_location", handlers.SetHomeLocation),
         (r"/user/get_base_infomation", handlers.GetBaseInfo),
+        (r"/user/set_outdoor_on_off", handlers.OutdoorOnOff),
+        (r"/user/set_outdoor_wifi", handlers.SetOutdoorWifi),
         (r"/user/suggest",handlers.Suggest),
+        (r"/user/agree_policy", handlers.AgreePolicy),
+
         (r"/pet/location", handlers.PetLocation),
         (r"/pet/location_test", handlers.PetLocation2),
         (r"/pet/walk", handlers.PetWalk),
@@ -82,6 +86,7 @@ webapp = Application(
         (r"/pet/healthy/summary", handlers.Summary),
         (r"/pet/healthy/set_sport_info", handlers.SetTargetStep),
         (r"/pet/activity", handlers.PetActivity),
+
         (r"/device/add_device_info", handlers.AddDeviceInfo),
         (r"/device/get_info", handlers.GetDeviceInfo),
         (r"/device/remove_device_info", handlers.RemoveDeviceInfo),
@@ -91,11 +96,9 @@ webapp = Application(
         (r"/device/send_get_wifi_list_cmd", handlers.SendGetWifiListCmd),
         (r"/device/get_wifi_list", handlers.GetWifiList),
         (r"/device/reboot_device_cmd", handlers.RebootDeviceCmd),
-        (r"/user/agree_policy", handlers.AgreePolicy),
         (r"/device/get_device_status",handlers.GetPetStatusInfo),
+
         (r"/app/get_config",handlers.AppConfig),
-        (r"/user/set_outdoor_on_off", handlers.OutdoorOnOff),
-        (r"/user/set_outdoor_wifi", handlers.SetOutdoorWifi),
     ],
     autoreload=True,
     debug=True,

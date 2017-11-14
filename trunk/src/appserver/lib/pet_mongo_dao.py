@@ -90,7 +90,19 @@ class PetMongoDAO(MongoDAOBase):
 
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            res = tb.update_one({"uid": uid}, {"$set": info},
+            res = tb.update({"uid": uid}, {"$set": info},
+                                upsert=True)
+            return res.modified_count
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
+    @gen.coroutine
+    def update_pet_info_by_device(self, imei, **kwargs):
+        info = kwargs
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"device_imei": imei}, {"$set": info},
                                 upsert=True)
             return res.modified_count
 
@@ -116,12 +128,18 @@ class PetMongoDAO(MongoDAOBase):
                     raise PetMongoDAOException(
                         "Unknown pet infos row column \"%s\"", v)
                 qcols[v] = 1
-
-            cursor = tb.find({"uid": uid}, qcols)
+            cursor = tb.find({"uid": uid}, qcols, sort=[("choice", pymongo.DESCENDING)])
             if cursor.count() <= 0:
                 return None
-            return cursor[0]
-
+            else:
+                if cursor[0]["choice"] == 1:
+                    return cursor[0]
+                #有绑定宠物，但是没有设置choice
+                res = tb.update_one({"pet_id": cursor[0]["pet_id"]}, {"$set": {"choice":1}})
+                if res.modified_count == 1:
+                    return cursor[0]
+                else:
+                    return None
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
 
@@ -169,14 +187,31 @@ class PetMongoDAO(MongoDAOBase):
         raise gen.Return(ret)
 
     @gen.coroutine
+    def get_pet_info_by_petid(self, pet_id, cols):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            qcols = {"_id": 0}
+            for v in cols:
+                if not pet_def.has_pet_infos_col(v):
+                    raise PetMongoDAOException(
+                        "Unknown pet infos row column \"%s\"", v)
+                qcols[v] = 1
+            cursor = tb.find({"pet_id": pet_id}, qcols)
+            if cursor.count() <= 0:
+                return None
+            return cursor[0]
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
+    @gen.coroutine
     def bind_device(self, uid, imei, pet_id,bind_day,old_calorie,x_os_int):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             # res = tb.insert_one({"uid": uid,"device_imei": imei,"pet_id":pet_id})
-            info={"device_imei": imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int}
-            res=tb.update_one({"uid": uid}, {"$set": info},
-                       upsert=True)
-            logging.info("bind_device:%s, %s", imei, info)
+            info={"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int}
+            res=tb.insert_one({"uid": uid,"device_imei":imei}, {"$set": info})
+            logging.info("bind_device, uid:%d imei:%s, info:%s success", uid, imei, info)
             return res
 
         ret = yield self.submit(_callback)
@@ -323,6 +358,16 @@ class PetMongoDAO(MongoDAOBase):
 
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
+    @gen.coroutine
+    def set_home_wifi_by_imei(self, imei, home_wifi):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"device_imei": imei},
+                                {"$set": {"home_wifi": home_wifi,"common_wifi":[]}})
+            return res
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
 
     @gen.coroutine
     def set_home_location(self, uid, home_location):
@@ -334,6 +379,18 @@ class PetMongoDAO(MongoDAOBase):
 
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
+
+    @gen.coroutine
+    def set_home_location_by_petid(self, pet_id, home_location):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"pet_id": pet_id},
+                                {"$set": {"home_location": home_location}})
+            return res
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
     #设置户外wifi
     @gen.coroutine
     def set_outdoor_wifi(self,uid,outdoor_wifi):
@@ -344,12 +401,35 @@ class PetMongoDAO(MongoDAOBase):
             return res
         ret=yield  self.submit(_callback)
         raise gen.Return(ret)
+
+    #设置户外wifi by pet_id
+    @gen.coroutine
+    def set_outdoor_wifi_by_petid(self,pet_id,outdoor_wifi):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"pet_id": pet_id},
+                                {"$set": {"outdoor_wifi": outdoor_wifi,"outdoor_in_protected":1}})
+            return res
+        ret=yield  self.submit(_callback)
+        raise gen.Return(ret)
+
     #户外开关
     @gen.coroutine
     def set_outdoor_on_off(self,uid,outdoor_on_off):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             res = tb.update_one({"uid": uid},
+                                {"$set": {"outdoor_on_off": outdoor_on_off}})
+            return res
+        ret=yield  self.submit(_callback)
+        raise gen.Return(ret)
+
+    #户外开关 by pet_id
+    @gen.coroutine
+    def set_outdoor_on_off_by_pet_id(self, pet_id, outdoor_on_off):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"pet_id": pet_id},
                                 {"$set": {"outdoor_on_off": outdoor_on_off}})
             return res
         ret=yield  self.submit(_callback)

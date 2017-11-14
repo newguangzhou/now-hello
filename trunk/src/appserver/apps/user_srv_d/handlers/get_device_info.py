@@ -45,10 +45,10 @@ class GetDeviceInfo(HelperHandler):
             if not st:
                return
             if device_imei is None:
-                info = yield pet_dao.get_user_pets(uid, ("device_imei", ))
+                info = yield pet_dao.get_pet_info(("device_imei",), uid = uid, choice = 1)
                 if not info:
-                    logging.warning("OnGetDeviceInfo, not found, %s",
-                                    self.dump_req())
+                    logging.warning("OnGetDeviceInfo,uid :%d not found, %s",
+                                    uid, self.dump_req())
                     res["status"] = error_codes.EC_PET_NOT_EXIST
                     self.res_and_fini(res)
                     return
