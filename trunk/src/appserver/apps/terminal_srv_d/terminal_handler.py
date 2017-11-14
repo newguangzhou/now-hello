@@ -358,8 +358,8 @@ class TerminalHandler:
             if len(lnglat3) != 0:
                 location_info["lnglat3"] = lnglat3
                 location_info["radius3"] = radius3
-            logger.info("imei:%s pk:%s location:%s", pk.imei, str_pk,
-                        str(location_info))
+            logger.info("imei:%s pk:%s location:%s radius:%d", pk.imei, str_pk,
+                        str(location_info), radius)
             if pet_info is not None:
                 yield self.pet_dao.add_location_info(pet_info["pet_id"],
                                                      pk.imei, location_info)
@@ -499,6 +499,7 @@ class TerminalHandler:
             #紧急搜索模式下判断是否需要开启GPS
             device_setting = self.device_setting_mgr.get_device_setting(pk.imei)
             if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:#紧急搜索状态
+                logger.debug("imei:%s in urgent search mode, radius:%d, locator status:%d", pk.imei, radius, pk.location_info.locator_status)
                 #设置J01时间为1分钟
                 device_setting["report_time"]  = 1
                 if radius > 80 :

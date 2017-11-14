@@ -204,7 +204,7 @@ class SendParamsCommandHandler(tornado.web.RequestHandler):
                     msg_type = content[0:3]
                     unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, msg_type)
                 else:
-                    logger.debug("the msg(%s) send to imei:%s has not changed.skip send.", send_data)
+                    logger.debug("the msg(%s) send to imei:%s has not changed.skip send.", content, imei)
         data = json.dumps(res, ensure_ascii=False, encoding='utf8')
         self.write(data)
 
