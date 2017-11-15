@@ -119,32 +119,6 @@ class AddPetInfo(HelperHandler):
             self.res_and_fini(res)
             return
 
-        # # 发给终端
-        # if weight is not None and sex is not None:
-        #     device_imei = imei
-        #     if device_imei is None:
-        #         logging.warning("AddPetInfo, not found, %s",
-        #                         self.dump_req())
-        #         return
-        #     msg = terminal_commands.PetLocation()
-        #     msg.battery_threshold = 25
-        #     send_weight = weight
-        #     send_sex = sex
-        #     msg.light_flash = ((0, 0),(0, 3))
-        #     msg.pet_weight = "%.2f" % (send_weight)
-        #     msg.pet_gender = send_sex
-        #     logging.info("add_pet_info send_command_j03 msg:%s",msg)
-        #
-        #     get_res = yield terminal_rpc.send_command_params(
-        #         imei=device_imei, command_content=str(msg))
-        #
-        #     if get_res["status"] == error_codes.EC_SEND_CMD_FAIL:
-        #         logging.warning("add_pet_info send_command_params, fail status:%d",
-        #                         error_codes.EC_SEND_CMD_FAIL)
-        #         res["status"] = error_codes.EC_SEND_CMD_FAIL
-        #         self.res_and_fini(res)
-        #         return
-
         try:
             yield pet_dao.update_pet_info_by_uid(uid, **info)
             res["status"] = error_codes.EC_SUCCESS

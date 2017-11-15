@@ -22,6 +22,8 @@ _DEVICE_INFOS_TB_ROW_DEFINE = {
     "light_status": (0, int),
     "register_date": (None, datetime.datetime),
     "mod_date": (None, datetime.datetime),
+    "setting": (u"", unicode),#保存设备配置信息
+    "update_time": (None, datetime.datetime),#设备上一次更改配置的时间
     "location_data": ([], list)
 }
 
@@ -31,6 +33,7 @@ def new_device_infos_row():
     cur = datetime.datetime.today()
     tmp["register_date"] = cur
     tmp["mod_date"] = cur
+    tmp["update_time"] = cur
     return tmp
 
 

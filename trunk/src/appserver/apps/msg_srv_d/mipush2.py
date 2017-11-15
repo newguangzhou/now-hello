@@ -39,17 +39,19 @@ class MiPush2:
 
     def send_to_alias_ios(self,
                               str_uids,
-                              desc,
-                              extras):
+                              payload,
+                              extra,
+                          channel = 0):
 
-        logging.info("on send_%s,dict:%s", desc, extras)
-        message = PushMessage().description(extras).sound_url(
-                                "default").badge(1).category(
-                                "action").title("test_title")
-        # recv = self._sender1.send_to_alias(message.message_dict_ios(), str_uids)
+        logging.info("on send_%s,dict:%s", payload, extra)
+        message = PushMessage().description(payload).sound_url(
+            "default").badge(1).category("action").title("test_title").extra(extra)
+        if channel==1:
+            message=message.apns_only()
+        elif channel==2:
+            message=message.connection_only()
         recv = self._sender_ios.send_to_alias(message.message_dict_ios(),str_uids)
         logging.debug("on send_to_alias_ios recv:%s", recv)
-
 
     def send_to_useraccount_android(self,
                               str_uids,
@@ -91,7 +93,8 @@ class MiPush2:
         logging.debug("on send_to_alias_ios recv:%s", recv)
     def test_send_to_alias_ios(self,
                               str_uids,
-                              extras):
+                              extras
+                               ):
         dict = json.loads(extras)
 
         message = PushMessage().description(extras).sound_url(

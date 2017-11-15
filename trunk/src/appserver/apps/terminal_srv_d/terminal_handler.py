@@ -13,14 +13,15 @@ from terminal_base import terminal_proto, terminal_commands, terminal_packets, u
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from get_location import get_location_by_wifi, get_location_by_bts_info, get_location_by_mixed, convert_coordinate
-from lib.type_defines import *
+from lib import type_defines
+from lib import error_codes
 
 _TERMINAL_CONN_MAX_BUFFER_SIZE = 2 * 1024 * 1024  # 2M
 logger = logging.getLogger(__name__)
 
 from lib import utils
 from lib import push_msg
-from lib import terminal_rpc
+#from lib import terminal_rpc
 LOW_BATTERY = 25
 ULTRA_LOW_BATTERY = 15
 
@@ -60,6 +61,7 @@ class TerminalHandler:
 
         self.terminal_proto_guarder = {}
         self.terminal_rpc = kwargs.get("terminal_rpc",None)
+        self.device_setting_mgr = kwargs.get("device_setting_mgr", None)
 
     def OnOpen(self, conn_id):
         conn = self.conn_mgr.GetConn(conn_id)
@@ -184,19 +186,17 @@ class TerminalHandler:
 
     def OnClose(self, conn_id, is_eof):
         conn = self.conn_mgr.GetConn(conn_id)
-        if is_eof:
-            logger.warning("Terminal conn is closed by peer, peer=\"%s\"",
-                           conn.GetPeer())
-        else:
-            logger.warning("Terminal conn is closed, info=\"%s\"",
-                           conn.GetPeer())
+        if conn is not None:
+            if is_eof:
+                logger.warning("Terminal conn is closed by peer, peer=\"%s\"",
+                               conn.GetPeer())
+            else:
+                logger.warning("Terminal conn is closed, info=\"%s\"",
+                               conn.GetPeer())
 
-        if self.terminal_proto_guarder.has_key(conn_id):
-            del self.terminal_proto_guarder[conn_id]
-        conn.close()
-        # 打日志
-        imei = self._broadcastor.get_imei_by_conn(conn_id)
-
+            if self.terminal_proto_guarder.has_key(conn_id):
+                del self.terminal_proto_guarder[conn_id]
+            conn.close()
         self._broadcastor.un_register_conn(conn_id)
 
     def OnTimeout(self, conn_id):
@@ -293,6 +293,8 @@ class TerminalHandler:
         radius = -1
         radius2 = -1
         radius3 = -1
+        station_status = 0#基站信号是否正常  0:正常  1：信号异常(信号差)
+        location_info = {}
 
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_GPS:
 
@@ -304,6 +306,10 @@ class TerminalHandler:
         elif pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_STATION:
             bts_info, near_bts_infos = util.split_locator_station_info(
                 pk.location_info.station_locator_data)
+
+            #判断基站信号强弱
+            station_status = self.is_station_signal_low(pk.location_info.station_locator_data)
+
             ret = yield self.get_location_by_bts_info(pk.imei, bts_info,
                                                       near_bts_infos)
             if ret is not None:
@@ -343,7 +349,8 @@ class TerminalHandler:
                              "radius": radius,
                              "locator_time": locator_time,
                              "locator_status": locator_status,
-                             "server_recv_time": time_stamp
+                             "server_recv_time": time_stamp,
+                             "station_status" : station_status
                              }
             if len(lnglat2) != 0:
                 location_info["lnglat2"] = lnglat2
@@ -351,27 +358,29 @@ class TerminalHandler:
             if len(lnglat3) != 0:
                 location_info["lnglat3"] = lnglat3
                 location_info["radius3"] = radius3
-            logger.info("imei:%s pk:%s location:%s", pk.imei, str_pk,
-                        str(location_info))
+            logger.info("imei:%s pk:%s location:%s radius:%d", pk.imei, str_pk,
+                        str(location_info), radius)
             if pet_info is not None:
                 yield self.pet_dao.add_location_info(pet_info["pet_id"],
                                                      pk.imei, location_info)
                 uid = pet_info.get("uid", None)
                 if uid is not None:
-                    msg = push_msg.new_location_change_msg(
+                    msg_android = push_msg.new_location_change_msg(
                         "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                        int(time.mktime(locator_time.timetuple())), radius)
+                        int(time.mktime(locator_time.timetuple())), radius, locator_status,station_status,
+                        push_msg.CT_ANDROID)
+                    msg_ios = push_msg.new_location_change_msg(
+                        "%.7f" % lnglat[1], "%.7f" % lnglat[0],
+                        int(time.mktime(locator_time.timetuple())), radius,locator_status,station_status,
+                        push_msg.CT_IOS)
                     try:
                         yield self.msg_rpc.push_android(uids=str(uid),
-                                                        payload=msg,
+                                                        payload=msg_android,
                                                         pass_through=1)
                         #channel:0,都推送（默认）；1，apns_only；2：connection_only
-                        msg = push_msg.ios_location_change_msg(
-                            "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                            int(time.mktime(locator_time.timetuple())), radius)
-                        yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                        yield self.msg_rpc.push_ios(uids=str(uid),
                                                                 payload="xmq",
-                                                                extra=msg,
+                                                                extra=msg_ios,
                                                                 channel=2
                                                                 )
                     except Exception, e:
@@ -481,59 +490,33 @@ class TerminalHandler:
                         # 发送状态消息
                         if not is_outdoor_state:
                             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
-            # 在家离家逻辑判断
 
-
-            # if pet_info.get("outdoor_on_off",0) == 1 and pet_info.get("pet_status",0)!=2 and pet_info.get("outdoor_wifi",None) is not None:
-            #     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-            #         outdoor_wifi=pet_info.get("outdoor_wifi",None)
-            #         wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-            #         is_in_protected=utils.is_in_protected(outdoor_wifi,wifi_info)
-            #         self._SendOutdoorInOrOutProtected(pk.imei,is_in_protected)
-            #     else:
-            #         #离开保护区域
-            #         self._SendOutdoorInOrOutProtected(pk.imei, False)
-            # else:
-            #     if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
-            #         wifi_info = utils.change_wifi_info(pk.location_info.mac, True)
-            #         common_wifi = pet_info.get("common_wifi", None)
-            #         home_wifi = pet_info.get("home_wifi", None)
-            #         new_common_wifi = utils.get_new_common_wifi(
-            #         common_wifi, wifi_info, home_wifi)
-            #         uid = pet_info.get("uid", None)
-            #         if uid is not None:
-            #             is_in_home = utils.is_in_home(home_wifi, new_common_wifi,
-            #                                       wifi_info)
-            #             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
-            #         yield self.pet_dao.add_common_wifi_info(pet_info["pet_id"],
-            #                                             new_common_wifi)
-            #     elif pk.location_info.locator_status==terminal_packets.LOCATOR_STATUS_STATION:
-            #         home_location=pet_info.get("home_location")
-            #         if home_location is not None and len(lnglat)!=0:
-            #             disance=utils.haversine(float(home_location.get("longitude")),float(home_location.get("latitude")),float(lnglat[0]),float(lnglat[1]))
-            #             is_in_home=True if (disance<=radius*1.2) else False
-            #             self._SendPetInOrNotHomeMsg(pk.imei, is_in_home)
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
             yield self.new_device_dao.report_wifi_info(pk.imei,
                                                        pk.location_info.mac)
 
-        #紧急搜索模式下判断是否需要开启GPS
-        if pet_info is not None and pet_info.get("pet_status",0) == PETSTATUS_FINDING:
-            print "imei:",pk.imei,"radius=",radius 
-            if radius > 80:
-                #定位误差>80米
-                msg = terminal_commands.Params()
-                msg.gps_enable = GPS_ON
-                msg.report_time = 1
-                get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
-                print "setGPS imei:",pk.imei,"ON"
-            else:
-                msg = terminal_commands.Params()
-                msg.gps_enable = GPS_OFF
-                msg.report_time = 1
-                get_res = self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(msg))
-                print "setGPS imei:",pk.imei,"OFF"
+        if pet_info is not None:
+            #紧急搜索模式下判断是否需要开启GPS
+            device_setting = self.device_setting_mgr.get_device_setting(pk.imei)
+            if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:#紧急搜索状态
+                logger.debug("imei:%s in urgent search mode, radius:%d, locator status:%d", pk.imei, radius, pk.location_info.locator_status)
+                #设置J01时间为1分钟
+                device_setting["report_time"]  = 1
+                if radius > 80 :
+                    #定位误差>80米
+                        #GPS没有开
+                    device_setting["gps_enable"] = type_defines.GPS_ON
+                else:
+                    #定位<80米
+                    if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_MIXED:
+                        #混合定位模式
+                        device_setting["gps_enable"] = type_defines.GPS_OFF
 
+            else:#不在紧急搜索状态
+                device_setting["report_time"]  =0
+                device_setting["pgs_enable"] = type_defines.GPS_OFF
+            #device_setting.save()
+            yield self.terminal_rpc.send_command_params(imei=pk.imei, command_content=str(device_setting))
         raise gen.Return(True)
 
     @gen.coroutine
@@ -662,7 +645,7 @@ class TerminalHandler:
                                                     desc="追踪器电量低，请及时充电！",
                                                     payload=msg,
                                                     pass_through=0)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                    yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload="追踪器电量低，请及时充电！",
                                                             extra=push_msg.extra({"type":"low_battery"})
                                                             )
@@ -672,7 +655,7 @@ class TerminalHandler:
                                                     desc="追踪器电量超低，请及时充电！",
                                                     payload=msg,
                                                     pass_through=0)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                    yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload="追踪器电量超低，请及时充电！",
                                                             extra=push_msg.extra({"type":"superlow_battery"})
                                                             )
@@ -876,7 +859,7 @@ class TerminalHandler:
         yield self.new_device_dao.add_device_log(imei=pk.imei,
                                                  calorie=pk.calorie,
                                                  location=location_info)
-        logger.info("add_device_log, imei:%s,calorie:%s", pk.imei,calorie)
+        logger.info("add_device_log, imei:%s,calorie:%s", pk.imei, pk.calorie)
 
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy"),
@@ -937,7 +920,7 @@ class TerminalHandler:
                                                     desc=message,
                                                     payload=msg,
                                                     pass_through=0)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                    yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
                                                             extra=push_msg.extra({"type":"outdoor_in_protected"})
                                                             )
@@ -947,7 +930,7 @@ class TerminalHandler:
                                                     desc=message,
                                                     payload=msg,
                                                     pass_through=0)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                    yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
                                                             extra=push_msg.extra({"type":"outdoor_out_protected"})
                                                             )
@@ -1006,7 +989,7 @@ class TerminalHandler:
                                                     desc=message,
                                                     payload=msg,
                                                     pass_through=0)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                    yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
                                                             extra=push_msg.extra({"type":"in_home"})
                                                             )
@@ -1016,7 +999,7 @@ class TerminalHandler:
                                                     desc=message,
                                                     payload=msg,
                                                     pass_through=0)
-                    yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
+                    yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
                                                             extra=push_msg.extra({"type":"out_home"})
                                                             )
@@ -1046,9 +1029,9 @@ class TerminalHandler:
                 yield self.msg_rpc.push_android(uids=str(uid),
                                                 payload=msg,
                                                 pass_through=1)
-                # yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg,
-                #                             extra={"type":"online"}
-                #                             )
+                yield self.msg_rpc.push_ios(uids=str(uid), payload=msg,channel=2,
+                                             extra={"type":"online"}
+                                             )
             except Exception, e:
                 logger.exception(e)
 
@@ -1083,16 +1066,27 @@ class TerminalHandler:
                 if uid is None:
                     logger.warning("imei:%s uid not find", imei)
                     continue
-                msg = push_msg.new_device_off_line_msg()
+                device_info = yield self.new_device_dao.get_device_info(
+                    imei, ("electric_quantity",))
+                electric_quantity = device_info.get("electric_quantity", -1)
+                print "uid:",uid,"device_info:",device_info
+                offline_reason = 3
+                if electric_quantity == 0:
+                    offline_reason = 1
+                else:
+                    location_info = yield self.pet_dao.get_last_location_info(pet_info["pet_id"])
+                    if location_info.get("station_status") == 1:
+                        offline_reason = 2
+                msg_ios = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_IOS)
+                msg_android = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_ANDROID)
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )
                 try:
-                    # yield self.msg_rpc.push_android(uids=str(uid),
-                    #                                 payload=msg,
-                    #                                 pass_through=1)
-                    # yield self.msg_rpc.push_ios(uids=str(uid), payload=msg)
-                    # yield self.msg_rpc.push_ios_useraccount(uids=str(uid), payload=msg,
+                    #yield self.msg_rpc.push_android(uids=str(uid),
+                    #                               payload=msg_android,
+                    #                               pass_through=1)
+                    #yield self.msg_rpc.push_ios(uids=str(uid), payload=msg_ios,channel=2,
                     #                                         extra={"type": "offline"})
                     logger.debug("_OnImeiExpires imeis success:%s", str(imeis))
                 except Exception, e:
@@ -1124,3 +1118,19 @@ class TerminalHandler:
     @run_on_executor
     def get_location_by_mixed(self, imei, bts_info, near_bts_infos, macs):
         return get_location_by_mixed(imei, bts_info, near_bts_infos, macs)
+
+    ###判断基站信号是否差,信号差返回 1
+    def is_station_signal_low(self, station_infos):
+        if len(station_infos) > 2:
+            return 0
+        if len(station_infos) < 1:
+            return 1
+        tmp = station_infos[0].split(",")
+        if len(tmp) >= 5 :
+            if int(tmp[4]) >= 20:
+                return 0
+        return 1
+
+
+
+

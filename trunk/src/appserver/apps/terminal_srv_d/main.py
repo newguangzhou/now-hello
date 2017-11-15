@@ -17,8 +17,8 @@ from tornado.options import define, options
 from tornado.web import Application, url
 from tornado import gen
 
-from terminal_base import conn_mgr2, broadcast, thread_trace
-from lib.pyloader import PyLoader
+from terminal_base import conn_mgr2, broadcast, thread_trace, device_setting_mgr
+#from lib.pyloader import PyLoader
 from lib.op_log_dao import OPLogDAO
 from lib.new_device_dao import NewDeviceDAO
 from lib.pet_dao import PetDAO
@@ -99,6 +99,8 @@ if __name__ == '__main__':
         new_device_dao=NewDeviceDAO.new(
             mongo_meta=mongo_conf.op_log_mongo_meta),
         msg_rpc=msg_rpc,
+        device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
+            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)),
         unreply_msg_mgr=unreply_msg_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr
         terminal_rpc = term_rpc
@@ -122,6 +124,8 @@ if __name__ == '__main__':
         broadcastor=broadcastor,
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,
+        device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
+            NewDeviceDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta)),
         conn_mgr=conn_mgr,
         # no_heart_msg_mgr=no_heart_msg_mgr,
         op_log_dao=OPLogDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta), )

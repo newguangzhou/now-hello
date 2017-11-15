@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import tornado.web
 from tornado import gen
-from datetime import datetime
+#from datetime import datetime
 import logging
-import urllib
+#import urllib
 from lib import utils
 from lib import error_codes
 import json
@@ -11,7 +11,7 @@ import base64
 from terminal_base import terminal_packets, terminal_commands, terminal_proto
 from test_data import TEST_S2C_COMMAND_DATA
 logger = logging.getLogger(__name__)
-from urllib import quote
+#from urllib import quote
 
 JO3_HTML = """
 <!DOCTYPE html>
@@ -183,17 +183,28 @@ class SendParamsCommandHandler(tornado.web.RequestHandler):
             broadcastor = self.settings["broadcastor"]
             pk = terminal_packets.SendCommandReq(imei, content)
             send_data = str(pk)
-            ret = yield broadcastor.send_msg_multicast((imei, ), send_data)
-            if ret:
-                ret_str = "send ok"
-            else:
-                ret_str = "send fail"
-                # res["status"] = error_codes.EC_SEND_CMD_FAIL
-            self._OnOpLog("s2c send_data:%s ret:%s" % (send_data, ret_str),
-                          imei)
-            unreply_msg_mgr = self.settings["unreply_msg_mgr"]
-            msg_type = content[0:3]
-            unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, msg_type)
+            device_setting_mgr = self.settings.get("device_setting_mgr",None)
+            if  device_setting_mgr is not None:
+                device_setting= device_setting_mgr.get_device_setting(imei)
+                device_setting_str = str(device_setting)
+                #device_setting_new.parse(content)
+                logger.debug("old setting:%s ,new setting:%s ", device_setting_str, content)
+                if content  != device_setting_str:
+                    ret = yield broadcastor.send_msg_multicast((imei, ), send_data)
+                    if ret:
+                        ret_str = "send ok"
+                        device_setting.parse(content)
+                        device_setting.save()
+                    else:
+                        ret_str = "send fail"
+                        # res["status"] = error_codes.EC_SEND_CMD_FAIL
+                    self._OnOpLog("s2c send_data:%s ret:%s" % (send_data, ret_str),
+                              imei)
+                    unreply_msg_mgr = self.settings["unreply_msg_mgr"]
+                    msg_type = content[0:3]
+                    unreply_msg_mgr.add_unreply_msg(pk.sn, imei, send_data, msg_type)
+                else:
+                    logger.debug("the msg(%s) send to imei:%s has not changed.skip send.", content, imei)
         data = json.dumps(res, ensure_ascii=False, encoding='utf8')
         self.write(data)
 

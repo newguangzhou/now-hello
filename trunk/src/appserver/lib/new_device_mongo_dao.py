@@ -114,7 +114,7 @@ class NewDeviceMongoDAO(MongoDAOBase):
     def update_device_info(self, imei, **kwargs):
         device_info = kwargs
         #print "update_device_info:", device_info
-        logging.debug("uidate_device_info,device_info:%s",device_info)
+        logging.debug("update_device_info,imei:%s, device_info:%s",imei, device_info)
         
         validate_ret, exp_col = new_device_def.validate_device_cols(**kwargs)
         if not validate_ret:

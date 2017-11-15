@@ -1,12 +1,35 @@
 # -*- coding: utf-8 -*-
 import json
 
+#CLIENT_TYPE
+CT_IOS       = 1 #IOS
+CT_ANDROID   = 2 #ANDROID
+def android_msg(msg):
+    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+def ios_msg(msg):
+    new_msg = {}
+    if msg.has_key("data"):
+        for k,v in msg.items():
+            if k == "data":
+                for k1,v1 in v.items():
+                    new_msg[k1] = v1
+            else:
+                new_msg[k] = v
+        return json.dumps(new_msg, ensure_ascii=False, encoding="utf8")
+    else:
+        return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
-def new_device_off_line_msg():
+def new_device_off_line_msg(offline_reason, client_type = CT_ANDROID):
     msg = {"type": "device",
            "signal": "offline",
+           "data" : {
+               "offline_reason": offline_reason
+                }
            }
-    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+    if client_type == CT_IOS:
+        return ios_msg(msg)
+    else:
+        return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
 def new_device_on_line_msg(battery,datetime):
     msg = {"type": "device",
@@ -36,25 +59,21 @@ def new_pet_in_home_msg():
     return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
 
-def new_location_change_msg(latitude, longitude, location_time, radius):
+def new_location_change_msg(latitude, longitude, location_time, radius, locator_status, station_status, client_type = CT_ANDROID):
     msg = {"type": "pet",
            "signal": "location-change",
            "data": {
                "latitude": latitude,
                "location_time": location_time,
                "longitude": longitude,
-               "radius": radius
+               "radius": radius,
+               "locator_status":locator_status,
+               "station_status":station_status
            }}
-    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
-#ios推送消息
-def ios_location_change_msg(latitude, longitude, location_time, radius):
-    msg={"type": "pet",
-           "signal": "location-change",
-            "latitude": latitude,
-            "location_time": location_time,
-            "longitude": longitude,
-            "radius": radius}
-    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+    if client_type == CT_IOS:
+        return ios_msg(msg)
+    else:
+        return android_msg(msg)
 
 # 0 is common-battery
 # 1 is low-battery
