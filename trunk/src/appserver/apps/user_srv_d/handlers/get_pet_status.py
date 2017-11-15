@@ -46,34 +46,22 @@ class GetPetStatusInfo(HelperHandler):
             st = yield self.check_token("OnGetPetStatusInfo", res, uid, token)
             if not st:
                 return
-            info = yield pet_dao.get_user_pets(uid, ("pet_id",
-                                                     "pet_status",
-                                                     "pet_is_in_home",
-                                                     "device_status","device_imei","outdoor_in_protected","outdoor_on_off"
-                                                     ))
+            cols = ("pet_id","pet_status","pet_is_in_home","device_status","device_imei",
+                    "outdoor_in_protected","outdoor_on_off")
+            info = yield pet_dao.get_pet_info_by_petid(pet_id, cols)
             if not info:
-                logging.warning("GetPetStatusInfo, not found, %s",
-                                self.dump_req())
+                logging.warning("GetPetStatusInfo,uid:%d pet_id:%d not found, %s",
+                                uid, pet_id, self.dump_req())
                 res["status"] = error_codes.EC_PET_NOT_EXIST
                 self.res_and_fini(res)
                 return
             device_imei=info["device_imei"]
-            if pet_id != info["pet_id"]:
-                res["status"] = error_codes.EC_PET_NOT_EXIST
-                self.res_and_fini(res)
-                return
             res["pet_status"] = info.get("pet_status",0)
             res["pet_is_in_home"]=info.get("pet_is_in_home",1)
             # res["device_status"]=info.get("device_status",1)
             res["device_status"] = 1
             res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
             res["outdoor_on_off"]=info.get("outdoor_on_off",0)
-
-
-
-
-
-
 
         except Exception, e:
             logging.error("GetPetStatusInfo, error, %s %s", self.dump_req(),
@@ -111,12 +99,6 @@ class GetPetStatusInfo(HelperHandler):
                         res["offline_reason"] = 2   #移动网络信号差
                     else:
                         res["offline_reason"] = 3   #其他
-
-
-
-
-
-
 
         except Exception,e:
             logging.debug("GetPetStatusInfo, req:%s error:%s", self.dump_req(),e.message)

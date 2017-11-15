@@ -13,7 +13,7 @@ from terminal_base import terminal_commands
 from lib import sys_config
 from lib.sys_config import SysConfig
 
-
+#接口已废弃
 class RebootDeviceCmd(HelperHandler):
     @gen.coroutine
     def _deal_request(self):

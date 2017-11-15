@@ -43,13 +43,9 @@ class RemoveDeviceInfo(HelperHandler):
             res["status"] = error_codes.EC_INVALID_ARGS
             self.res_and_fini(res)
             return
-        info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei"))
+        info = yield pet_dao.get_pet_info(("pet_id",),device_imei= imei)
         if info is None:
-            res["status"] = error_codes.EC_PET_NOT_EXIST
-            self.res_and_fini(res)
-            return
-        device_imei = info.get("device_imei", None)
-        if device_imei is None:
+            logging.warning("RemoveDeviceInfo, imei:%s not found.", imei)
             res["status"] = error_codes.EC_DEVICE_NOT_EXIST
             self.res_and_fini(res)
             return
@@ -57,7 +53,7 @@ class RemoveDeviceInfo(HelperHandler):
         try:
             yield pet_dao.unbind_device_imei(info["pet_id"])
         except Exception, e:
-            logging.warning("RemoveDeviceInfo, pet_dao.unbind_device_imei error, %s %s", self.dump_req(),
+            logging.warning("RemoveDeviceInfo, imei:%s unbind_device_imei error, %s %s", imei, self.dump_req(),
                             self.dump_exp(e))
             res["status"] = error_codes.EC_SYS_ERROR
             self.res_and_fini(res)

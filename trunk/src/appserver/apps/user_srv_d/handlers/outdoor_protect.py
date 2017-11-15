@@ -18,6 +18,8 @@ class OutdoorOnOff(HelperHandler):
         try:
             uid = int(self.get_argument("uid"))
             token = self.get_argument("token")
+            pet_id = int(self.get_argument("pet_id", -1))
+
             outdoor_on_off=int(self.get_argument("outdoor_on_off"))
         except Exception,e:
             logging.warning("OutdoorOnOff, invalid args, %s %s",
@@ -29,7 +31,11 @@ class OutdoorOnOff(HelperHandler):
         if not st:
             return
         try:
-            set_res = yield pet_dao.set_outdoor_on_off(uid, outdoor_on_off)
+            set_res = None
+            if pet_id > 0:
+                set_res = yield pet_dao.set_outdoor_on_off_by_petid(pet_id, outdoor_on_off)
+            else:
+                set_res = yield pet_dao.set_outdoor_on_off(uid, outdoor_on_off)
             if set_res.matched_count <= 0:
                 logging.warning("OutdoorOnOff, set fail, %s", self.dump_req())
                 res["status"] = error_codes.EC_SYS_ERROR
@@ -50,11 +56,6 @@ class OutdoorOnOff(HelperHandler):
         return self._deal_request()
 
 
-
-
-
-
-
 #设置户外热点
 class SetOutdoorWifi(HelperHandler):
     @gen.coroutine
@@ -66,6 +67,7 @@ class SetOutdoorWifi(HelperHandler):
         pet_dao = self.settings["pet_dao"]
         try:
             uid = int(self.get_argument("uid"))
+            pet_id= int(self.get_argument("pet_id", -1))
             token = self.get_argument("token")
             outdoor_wifi_ssid=self.get_argument("wifi_ssid")
             outdoor_wifi_bssid=self.get_argument("wifi_bssid")
@@ -80,7 +82,10 @@ class SetOutdoorWifi(HelperHandler):
         if not st:
             return
         try:
-            set_res=yield pet_dao.set_outdoor_wifi(uid,outdoor_wifi)
+            if pet_id > 0:
+                set_res=yield pet_dao.set_outdoor_wifi_by_petid(pet_id,outdoor_wifi)
+            else:
+                set_res=yield pet_dao.set_outdoor_wifi(uid,outdoor_wifi)
             if set_res.matched_count <= 0:
                 logging.warning("SetOutdoorWifi, set fail, %s", self.dump_req())
                 res["status"] = error_codes.EC_SYS_ERROR

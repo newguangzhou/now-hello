@@ -39,7 +39,7 @@ class SetHomeWifi(HelperHandler):
         try:
             uid = int(self.get_argument("uid"))
             imei=self.get_argument("imei")
-            pet_id=self.get_argument("pet_id")
+            pet_id=int(self.get_argument("pet_id", -1))
             token = self.get_argument("token")
             st = yield self.check_token("SetHomeWifi", res, uid, token)
             if not st:
@@ -64,11 +64,11 @@ class SetHomeWifi(HelperHandler):
             #    self.res_and_fini(res)
             #    return
 
-            set_res = yield pet_dao.set_home_wifi_by_imei(uid, {"wifi_ssid": wifi_ssid,
+            set_res = yield pet_dao.set_home_wifi_by_imei(imei, {"wifi_ssid": wifi_ssid,
                                                         "wifi_bssid":
                                                         wifi_bssid})
             if set_res.matched_count <= 0:
-                logging.warning("SetHomeWifi, set fail, %s", self.dump_req())
+                logging.warning("SetHomeWifi, imei:%s, set fail, %s",imei, self.dump_req())
                 res["status"] = error_codes.EC_SYS_ERROR
                 self.res_and_fini(res)
             else:

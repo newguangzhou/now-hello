@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-import json
-import urllib
+#import json
+#import urllib
 import logging
 import datetime
 import traceback
 from lib import error_codes
-from terminal_base import terminal_commands
+#from terminal_base import terminal_commands
 import pymongo
-from tornado.web import asynchronous
+#from tornado.web import asynchronous
 from tornado import gen
 from helper_handler import HelperHandler
 
 from lib import utils
-from lib import sys_config
-from lib.sys_config import SysConfig
-
+#from lib import sys_config
+#from lib.sys_config import SysConfig
+from pymongo import errors
 
 class AddPetInfo(HelperHandler):
     @gen.coroutine
@@ -82,8 +82,8 @@ class AddPetInfo(HelperHandler):
             self.res_and_fini(res)
             return
 
-        pet_id = yield gid_rpc.alloc_pet_gid()
-        info = {"pet_type_id": pet_type_id,"pet_id":pet_id}
+        #pet_id = yield gid_rpc.alloc_pet_gid()
+        info = {"pet_type_id": pet_type_id}
         info["target_energy"] = target_energy
         info["recommend_energy"]=recommend_energy
         if nick is not None:
@@ -104,13 +104,15 @@ class AddPetInfo(HelperHandler):
         # get imei
         try:
 
-            pet_info = yield pet_dao.get_pet_info(("device_imei",), uid=uid, pet_id={"%lt":0})
-            imei = None
+            pet_info = yield pet_dao.get_pet_info(("device_imei","pet_id"), uid=uid, init=0)
+            imei = ""
+            pet_id = 0
             if pet_info is not None:
-                imei = pet_info.get("device_imei",None)
-            if imei is None:
-                logging.error("AddPetInfo fail, uid:%d, imei_in_db is None,  req:%s",
-                                uid, self.dump_req())
+                imei = pet_info.get("device_imei","")
+                pet_id = pet_info.get("pet_id",0)
+            if imei == "" or pet_id == 0:
+                logging.error("AddPetInfo fail, uid:%d, imei:%s , pet_id:%d,  req:%s",
+                                uid,imei, pet_id, self.dump_req())
                 res["status"] = error_codes.EC_DEVICE_NOT_EXIST
                 self.res_and_fini(res)
                 return

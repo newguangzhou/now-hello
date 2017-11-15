@@ -56,8 +56,7 @@ class GetActivityInfo(HelperHandler):
             return
 
         res_info = yield pet_dao.get_sport_info(pet_id, start_date, end_date)
-
-        pet_info = yield pet_dao.get_user_pets_by_petid(pet_id,("target_energy","weight","sex","bind_day","old_calorie"))
+        pet_info = yield pet_dao.get_pet_info_by_petid(pet_id,("target_energy","weight","sex","bind_day","old_calorie"))
         logging.debug("GetActivityInfo, pet_info:%s", pet_info)
         target_amount=0
         weight=15

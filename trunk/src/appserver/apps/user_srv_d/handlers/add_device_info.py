@@ -26,6 +26,7 @@ class AddDeviceInfo(HelperHandler):
         pet_dao = self.settings["pet_dao"]
         conf = self.settings["appconfig"]
         terminal_rpc = self.settings["terminal_rpc"]
+        gid_rpc = self.settings["gid_rpc"]
         res = {"status": error_codes.EC_SUCCESS}
         custom_headers = self.custom_headers()
 
@@ -75,10 +76,12 @@ class AddDeviceInfo(HelperHandler):
         old_calorie = 0
         if last_device_log is not None:
             old_calorie = last_device_log["calorie"]
+        pet_id = 0
         try:
-            pet_id = int(time.time() * -1000)
+            pet_id = yield gid_rpc.alloc_pet_gid()
             yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie,x_os_int)
         except pymongo.errors.DuplicateKeyError, e:
+            logging.error("AddDeviceInfo,uid:%d add device:imei:%s pet_id:%d has exist", uid, imei, pet_id)
             res["status"] = error_codes.EC_EXIST
             try:
                 user_dao = self.settings["user_dao"]
@@ -87,7 +90,7 @@ class AddDeviceInfo(HelperHandler):
                 if old_user_info is not None:
                     old_uid = old_user_info.get("uid","")
                     if old_uid == "":
-                        logging.warning("AddDeviceInfo, error, imei has exit but can't get the old account: %s",
+                        logging.error("AddDeviceInfo,uid:%d imei:%s has exist,but can't get the old account: %s",
                                         self.dump_req())
                     else:
                         res["old_account"] = ""
@@ -98,7 +101,7 @@ class AddDeviceInfo(HelperHandler):
                             old_account=old_account[0:3]+"_**_"+old_account[-4:]
                         res["old_account"] = old_account
             except Exception, ee:
-                logging.warning("AddDeviceInfo, error, imei has exit but can't get the old account: %s %s",
+                logging.error("AddDeviceInfo, imei has exist but can't get the old account: %s %s",
                                 self.dump_req(),
                                 self.dump_exp(ee))
             self.res_and_fini(res)

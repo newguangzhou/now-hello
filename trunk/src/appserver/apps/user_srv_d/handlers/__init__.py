@@ -38,9 +38,8 @@ from set_sim_info import SetSimInfo
 from set_home_wifi import SetHomeWifi
 from set_home_location import SetHomeLocation
 from pet_find import PetFind
-from pet_walk import PetWalk
-from swicth_light import SwitchLight
-from get_switch_light import GetDeviceSwitchLightStatus
+#from pet_walk import PetWalk
+#from swicth_light import SwitchLight
 from get_pet_status import GetPetStatusInfo
 from get_base_info import GetBaseInfo
 from send_get_wifi_list_cmd import SendGetWifiListCmd

@@ -11,17 +11,6 @@ from lib import utils
 PET_DATABASE = "xmq_pet"
 
 """
-uid-pet_id对应表
-"""
-PET_RELATION_TB = 'pet_relation'
-PET_RELATION_TB_INDEXES = [
-    IndexModel("uid"),
-]
-_PET_RELATION_TB_ROW_DEFINE = {
-    "uid": (None, int),     #用户ID
-    "pet_id": (None, int),  # 宠物ID
-}
-"""
 宠物基本信息表
 """
 PET_INFOS_TB = "pet_infos"
@@ -34,6 +23,7 @@ _PET_INFOS_TB_ROW_DEFINE = {
     "pet_id": (None, int),  # 宠物全局唯一ID
     "uid": (None, int),
     "choice": (0, int),  #是否用户选择监控的宠物 1是 0否
+    "init": (0, int),  #初始化是否完成(绑定设备，设置宠物信息，设置home wifi home location)  1是 0否
     "nick": (u"", unicode),
     "logo_url": (u"", unicode),
     "logo_small_url": (u"", unicode),

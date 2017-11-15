@@ -33,9 +33,10 @@ class GetWifiList(HelperHandler):
         try:
             uid = int(self.get_argument("uid"))
             token = self.get_argument("token")
-            #device_imei = self.get_argument("imei", None)
+            pet_id = int(self.get_argument("pet_id"))
         except Exception, e:
-            logging.warning("GetWifiList, invalid args, %s", self.dump_req())
+            logging.warning("GetWifiList, invalid args,uid:%d pet_id:%d ,req:%s",
+                            uid, pet_id, self.dump_req())
             res["status"] = error_codes.EC_INVALID_ARGS
             self.res_and_fini(res)
             return
@@ -45,7 +46,7 @@ class GetWifiList(HelperHandler):
             if not st:
                return
 
-            info = yield pet_dao.get_user_pets(uid,
+            info = yield pet_dao.get_pet_info_by_petid(pet_id,
                                                ("device_imei", "home_wifi"))
             if not info:
                 logging.warning("GetWifiList, not found, %s", self.dump_req())
