@@ -249,7 +249,7 @@ class TerminalHandler:
         # pk.electric_quantity = app_electric_quantity
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
-             "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
+             "outdoor_on_off","outdoor_in_protected","outdoor_wifi","nick",
              "pet_status","home_location","pet_is_in_home","weight","sex","bind_day","old_calorie"),
             device_imei=pk.imei)
 
@@ -364,15 +364,32 @@ class TerminalHandler:
                 yield self.pet_dao.add_location_info(pet_info["pet_id"],
                                                      pk.imei, location_info)
                 uid = pet_info.get("uid", None)
+                pet_id = pet_info.get("pet_id" , -1)
+                nick = pet_info.get("nick","宠物")
                 if uid is not None:
+                    #pet_id,name, latitude, longitude, location_time, radius, locator_status, station_status
                     msg_android = push_msg.new_location_change_msg(
-                        "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                        int(time.mktime(locator_time.timetuple())), radius, locator_status,station_status,
-                        push_msg.CT_ANDROID)
+                        push_msg.CT_ANDROID,
+                        pet_id = pet_id,
+                        name = nick,
+                        latitude =  "%.7f" % lnglat[1],
+                        longitude = "%.7f" % lnglat[0],
+                        location_time = int(time.mktime(locator_time.timetuple())),
+                        radius = radius,
+                        locator_status = locator_status,
+                        station_status = station_status,
+                        )
                     msg_ios = push_msg.new_location_change_msg(
-                        "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                        int(time.mktime(locator_time.timetuple())), radius,locator_status,station_status,
-                        push_msg.CT_IOS)
+                        push_msg.CT_IOS,
+                        pet_id = pet_id,
+                        name = nick,
+                        latitude =  "%.7f" % lnglat[1],
+                        longitude = "%.7f" % lnglat[0],
+                        location_time = int(time.mktime(locator_time.timetuple())),
+                        radius = radius,
+                        locator_status = locator_status,
+                        station_status = station_status,
+                    )
                     try:
                         yield self.msg_rpc.push_android(uids=str(uid),
                                                         payload=msg_android,
@@ -884,18 +901,23 @@ class TerminalHandler:
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
+            pet_id = pet_info.get("pet_id", -1)
+            nick=pet_info.get("nick","宠物")
             # outdoor_in_protected=pet_info.get("outdoor_in_protected",0)
             # if(outdoor_in_protected==1 and is_in_protected) or (
             #         outdoor_in_protected==0 and not is_in_protected):
             #     return
             # yield self.pet_dao.update_pet_info(
             #     pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)
-            msg=push_msg.new_pet_outdoor_out_portected_msg()
             if is_in_protected:
-                msg=push_msg.new_pet_outdoor_in_portected_msg()
+                msg_android=push_msg.new_pet_outdoor_in_portected_msg(push_msg.CT_ANDROID,pet_id, nick)
+                msg_ios =push_msg.new_pet_outdoor_in_portected_msg(push_msg.CT_IOS,pet_id, nick)
+            else:
+                msg_android=push_msg.new_pet_outdoor_out_portected_msg(push_msg.CT_ANDROID, pet_id, nick)
+                msg_ios=push_msg.new_pet_outdoor_out_portected_msg(push_msg.CT_IOS, pet_id, nick)
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
                 # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                 #                                         payload=msg)
@@ -903,7 +925,6 @@ class TerminalHandler:
                 logger.exception(e)
             message=""
             sms_type="outdoor_out_protected"
-            nick=pet_info.get("nick","宠物")
             if is_in_protected:
                 message=nick+"回到户外保护范围。"
                 sms_type="outdoor_in_protected"
@@ -914,25 +935,14 @@ class TerminalHandler:
                 self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), nick)
                 return
             try:
-                if is_in_protected:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
                                                     desc=message,
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
-                                                            extra=push_msg.extra({"type":"outdoor_in_protected"})
-                                                            )
-                else:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    title="小毛球智能提醒",
-                                                    desc=message,
-                                                    payload=msg,
-                                                    pass_through=0)
-                    yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload=message,
-                                                            extra=push_msg.extra({"type":"outdoor_out_protected"})
+                                                            extra=msg_ios
                                                             )
             except Exception, e:
                 logger.exception(e)
@@ -956,12 +966,17 @@ class TerminalHandler:
             # yield self.pet_dao.update_pet_info(
             #     pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
 
-            msg = push_msg.new_pet_not_home_msg()
+            nick=pet_info.get("nick","宠物")
+            pet_id = pet_info.get("pet_id", -1)
             if is_in_home:
-                msg = push_msg.new_pet_in_home_msg()
+                msg_android = push_msg.new_pet_at_home_msg(push_msg.CT_ANDROID, pet_id, nick)
+                msg_ios = push_msg.new_pet_at_home_msg(push_msg.CT_IOS, pet_id, nick)
+            else:
+                msg_android = push_msg.new_pet_leave_home_msg(push_msg.CT_ANDROID, pet_id, nick)
+                msg_ios = push_msg.new_pet_leave_home_msg(push_msg.CT_IOS, pet_id, nick)
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
                 # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                 #                                         payload=msg)
@@ -970,7 +985,6 @@ class TerminalHandler:
 
             message = ""
             sms_type="at_home"
-            nick=pet_info.get("nick","宠物")
             if is_in_home:
                 message = nick+"已安全到家。"
                 sms_type="at_home"
@@ -983,30 +997,15 @@ class TerminalHandler:
                 return
 
             try:
-                if (is_in_home):
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
                                                     desc=message,
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
-                                                            extra=push_msg.extra({"type":"in_home"})
+                                                            extra=msg_ios
                                                             )
-                else:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    title="小毛球智能提醒",
-                                                    desc=message,
-                                                    payload=msg,
-                                                    pass_through=0)
-                    yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload=message,
-                                                            extra=push_msg.extra({"type":"out_home"})
-                                                            )
-
-
-
-
             except Exception, e:
                 logger.exception(e)
         else:
