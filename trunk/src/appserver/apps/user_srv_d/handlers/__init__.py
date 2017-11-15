@@ -25,6 +25,7 @@ from pet_location2 import PetLocation2
 from pet_type_info import PetTypeInfo
 from get_pet_info import GetPetInfo
 from get_pet_list import GetPetList
+from choose_pet import ChoosePet
 from add_pet_info import AddPetInfo
 from update_pet_info import UpdatePetInfo
 from get_activity_info import GetActivityInfo

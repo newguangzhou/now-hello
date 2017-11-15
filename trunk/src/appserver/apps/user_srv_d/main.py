@@ -72,6 +72,7 @@ webapp = Application(
         (r"/user/suggest",handlers.Suggest),
         (r"/user/agree_policy", handlers.AgreePolicy),
         (r"/user/get_pet_list", handlers.GetPetList),
+        (r"/user/choose_pet", handlers.ChoosePet),
 
         (r"/pet/location", handlers.PetLocation),
         (r"/pet/location_test", handlers.PetLocation2),
