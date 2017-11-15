@@ -46,6 +46,9 @@ class PetLocation(HelperHandler):
                 info = yield pet_dao.get_pet_info_by_petid(pet_id, ( "device_imei","pet_status"))
             else:
                 info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei","pet_status"))
+                if info is not None:
+                    pet_id = info.get("pet_id", -1)
+
             if info is None :
                 logging.warning("OnPetLocation, uid:%d pet_id:%d pet info not found, %s",uid, pet_id,
                                 self.dump_req())

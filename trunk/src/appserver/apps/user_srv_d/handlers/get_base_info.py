@@ -107,7 +107,7 @@ class GetBaseInfo(HelperHandler):
             return
 
 # 成功
-        logging.debug("GetBaseInfo, success %s", self.dump_req())
+        logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
         self.res_and_fini(res)
 
     def post(self):

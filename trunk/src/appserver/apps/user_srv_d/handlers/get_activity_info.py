@@ -73,7 +73,7 @@ class GetActivityInfo(HelperHandler):
         res["data"] = []
         if res_info is not None:
             for item in res_info:
-                print item
+                #print item
                 date_data = {}
                 date_data["date"] = utils.date2str(item["diary"].date())
                 date_data["target_amount"] = target_amount

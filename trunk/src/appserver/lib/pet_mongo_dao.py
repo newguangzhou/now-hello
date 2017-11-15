@@ -68,7 +68,7 @@ class PetMongoDAO(MongoDAOBase):
         #        "Validate pet infos columns error, invalid column \"%s\"",
         #        exp_col)
 
-        info["pet_id"] = pet_id
+   #     info["pet_id"] = pet_id
 
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
@@ -90,7 +90,7 @@ class PetMongoDAO(MongoDAOBase):
 
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            res = tb.update({"uid": uid}, {"$set": info},
+            res = tb.update_many({"uid": uid}, {"$set": info},
                                 upsert=True)
             return res.modified_count
 
@@ -121,6 +121,7 @@ class PetMongoDAO(MongoDAOBase):
     @gen.coroutine
     def get_user_pets(self, uid, cols):
         def _callback(mongo_client, **kwargs):
+            print "get_user_pets:",uid
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             qcols = {"_id": 0}
             for v in cols:
@@ -128,15 +129,14 @@ class PetMongoDAO(MongoDAOBase):
                     raise PetMongoDAOException(
                         "Unknown pet infos row column \"%s\"", v)
                 qcols[v] = 1
-            cursor = tb.find({"uid": uid}, qcols, sort=[("choice", pymongo.DESCENDING)])
-            if cursor.count() <= 0:
-                return None
-            else:
-                if cursor[0]["choice"] == 1:
-                    return cursor[0]
-                #有绑定宠物，但是没有设置choice
+            cursor = tb.find({"uid": uid, "choice":1}, qcols )
+            if cursor.count() > 0:
+                return cursor[0]
+            cursor = tb.find({"uid": uid}, qcols )
+            #有绑定宠物，但是没有设置choice
+            if cursor.count() >0 :
                 res = tb.update_one({"pet_id": cursor[0]["pet_id"]}, {"$set": {"choice":1}})
-                if res.modified_count == 1:
+                if res.modified_count > 0 : 
                     return cursor[0]
                 else:
                     return None
@@ -186,8 +186,8 @@ class PetMongoDAO(MongoDAOBase):
     def bind_device(self, uid, imei, pet_id,bind_day,old_calorie,x_os_int):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            info={"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int, "init" : 0, "choice":0}
-            res=tb.insert_one({"uid": uid,"device_imei":imei}, {"$set": info})
+            info={"uid":uid,"device_imei":imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int, "init" : 0, "choice":0}
+            res=tb.insert_one(info)
             logging.info("bind_device, uid:%d imei:%s, info:%s success", uid, imei, info)
             return res
 
@@ -350,7 +350,7 @@ class PetMongoDAO(MongoDAOBase):
     def set_home_location(self, uid, home_location):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            res = tb.update_one({"uid": uid,"init":0},
+            res = tb.update_one({"uid": uid},
                                 {"$set": {"home_location": home_location}})
             return res
 

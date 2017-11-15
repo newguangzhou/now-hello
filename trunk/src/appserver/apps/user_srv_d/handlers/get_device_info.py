@@ -92,7 +92,7 @@ class GetDeviceInfo(HelperHandler):
             return
 
 # 成功
-        logging.debug("OnGetPetInfo, success %s", self.dump_req())
+        logging.debug("OnGetPetInfo, success req:%s res:%s", self.dump_req(), res)
         self.res_and_fini(res)
 
     def post(self):

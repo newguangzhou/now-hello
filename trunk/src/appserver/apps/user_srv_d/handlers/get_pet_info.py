@@ -46,10 +46,12 @@ class GetPetInfo(HelperHandler):
 
             cols = ("pet_id", "nick", "logo_url", "birthday", "sex", "device_imei",
             "target_step", "weight", "pet_type_id", "description", "target_energy","recommend_energy")
-            if pet_id is not None:
+            if pet_id > 0:
                 info = yield pet_dao.get_pet_info_by_petid(pet_id, cols)
             else:
                 info = yield pet_dao.get_pet_info(cols, uid = uid,choice = 1)
+                if info is not None:
+                    pet_id = info.get("pet_id", 0)
             if not info:
                 logging.warning("OnGetPetInfo,uid:%d, pet_id:%d, not found, %s",
                                 uid, pet_id, self.dump_req())

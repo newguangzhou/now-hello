@@ -48,7 +48,12 @@ class GetPetStatusInfo(HelperHandler):
                 return
             cols = ("pet_id","pet_status","pet_is_in_home","device_status","device_imei",
                     "outdoor_in_protected","outdoor_on_off")
-            info = yield pet_dao.get_pet_info_by_petid(pet_id, cols)
+            if pet_id < 0:
+                info = yield pet_dao.get_user_pets(uid, cols)
+                if info is not None:
+                    pet_id = info.get("pet_id",-1)
+            else:
+                info = yield pet_dao.get_pet_info_by_petid(pet_id, cols)
             if not info:
                 logging.warning("GetPetStatusInfo,uid:%d pet_id:%d not found, %s",
                                 uid, pet_id, self.dump_req())
