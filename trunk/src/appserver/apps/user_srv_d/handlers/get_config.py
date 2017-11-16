@@ -15,11 +15,19 @@ class AppConfig(HelperHandler):
         logging.debug("AppConfig, %s", self.dump_req())
         self.set_header("Content-Type", "application/json; charset=utf-8")
         res = {"status": error_codes.EC_SUCCESS}
+<<<<<<< HEAD
 	force_update=0
         try:
             version = self.get_argument("version")
 	    if version < '1.0.5':
 		force_update=1
+=======
+        force_update=0
+        try:
+            version = self.get_argument("version")
+            if version < '1.0.5':
+                force_update=1
+>>>>>>> be9adc4192917432bcef1c2a0838933610661ec2
         except Exception,e:
             logging.warning("AppConfig, invalid args, %s %s", self.dump_req(),
                             self.dump_exp(e))
