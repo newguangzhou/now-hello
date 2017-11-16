@@ -97,7 +97,7 @@ class GetBaseInfo(HelperHandler):
         if not st:
             res["status"] = error_codes.EC_USER_NOT_LOGINED
         else:
-            res = yield self.get_base_info(pet_dao, uid, pet_id)
+            res = yield get_base_info(pet_dao, uid, pet_id)
         if res["status"] == error_codes.EC_SUCCESS:
             logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
         else:
