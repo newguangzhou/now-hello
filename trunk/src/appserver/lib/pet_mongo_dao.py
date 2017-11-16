@@ -3,16 +3,11 @@ import threading
 import logging
 import time
 import traceback
-import random
-import json
-import bson
+import datetime
 
 from tornado import ioloop, gen
 
 import pet_mongo_defines as pet_def
-#import utils
-
-#from sys_config import SysConfig
 import type_defines
 
 import pymongo
@@ -186,7 +181,11 @@ class PetMongoDAO(MongoDAOBase):
     def bind_device(self, uid, imei, pet_id,bind_day,old_calorie,x_os_int):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            info={"uid":uid,"device_imei":imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int, "init" : 0, "choice":0}
+            cur = datetime.datetime.now()
+            before_5_min = cur - datetime.timedelta(minutes = 5)
+            #删除5分钟前没有初始化完的设备，
+            tb.delete_one({"device_imei":imei,"init":0, "register_date":{"$lt":before_5_min}})
+            info={"uid":uid,"device_imei":imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int, "init" : 0, "choice":0 }
             res=tb.insert_one(info)
             logging.info("bind_device, uid:%d imei:%s, info:%s success", uid, imei, info)
             return res

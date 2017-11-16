@@ -45,7 +45,7 @@ class GetPetList(HelperHandler):
                return
             res["list"] = []
             info = yield pet_dao.get_pet_list(uid, ("pet_id", "device_imei",
-                                                     "name","choice", "logo_url"))
+                                                     "nick","choice", "logo_url"))
             if not info:
                 logging.warning("get pet list of uid:%d  not found, %s", uid, self.dump_req())
             else:
