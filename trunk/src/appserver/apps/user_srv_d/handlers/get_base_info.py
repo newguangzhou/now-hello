@@ -13,24 +13,71 @@ from lib import utils
 from lib import sys_config
 from lib.sys_config import SysConfig
 
+@gen.coroutine
+def get_base_info(pet_dao,uid, pet_id):
+    logging.debug("get_base_info, uid:%d pet_id:%d", uid, pet_id)
+    res = {"status": error_codes.EC_SUCCESS}
+
+    try:
+        res["pet_id"] = 0
+        res["device_imei"] = ""
+        res["wifi_bssid"] = ""
+        res["wifi_ssid"] = ""
+        res["has_reboot"] = 0
+        res["longitude"]=-1
+        res["latitude"]=-1
+        res["agree_policy"]=1
+        res["outdoor_on_off"]=0
+        res["outdoor_wifi_bssid"]=""
+        res["outdoor_wifi_ssid"]=""
+        res["outdoor_in_protected"]=0
+        if pet_id > 0:
+            info = yield pet_dao.get_pet_info_by_petid(pet_id, ( "device_imei",
+                                                                 "home_wifi","has_reboot","home_location","agree_policy","outdoor_on_off","outdoor_wifi","outdoor_in_protected"))
+        else:
+            info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei",
+                                                     "home_wifi","has_reboot","home_location","agree_policy","outdoor_on_off","outdoor_wifi","outdoor_in_protected"))
+            if info:
+                pet_id = info.get("pet_id", -1)
+        if not info or pet_id <= 0:
+            logging.warning("GetBaseInfo in pet dao, not found,uid:%d pet_id:%d",
+                            uid, pet_id)
+            res["status"] = error_codes.EC_PET_NOT_EXIST
+            raise gen.Return(res)
+        else:
+            res["pet_id"] = pet_id
+            res["has_reboot"] = info.get("has_reboot",0)
+            device_imei = info.get("device_imei", "")
+            if device_imei is not None and utils.is_imei_valide(str(device_imei)):
+                res["device_imei"] = device_imei
+            home_wifi = info.get("home_wifi", None)
+            if home_wifi is not None:
+                res["wifi_bssid"] = home_wifi["wifi_bssid"]
+                res["wifi_ssid"] = home_wifi["wifi_ssid"]
+            home_location=info.get("home_location",None)
+            if home_location is not None:
+                res["longitude"]=home_location["longitude"]
+                res["latitude"]=home_location["latitude"]
+            res["outdoor_on_off"]=int(info.get("outdoor_on_off",0))
+            outdoor_wifi=info.get("outdoor_wifi",None)
+            if outdoor_wifi is not None:
+                res["outdoor_wifi_bssid"] = outdoor_wifi["outdoor_wifi_bssid"]
+                res["outdoor_wifi_ssid"]=outdoor_wifi["outdoor_wifi_ssid"]
+            res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
+            #补解绑清除x_os_int的漏洞
+    except Exception, e:
+        res["status"] = error_codes.EC_SYS_ERROR
+        raise gen.Return( res)
+    raise gen.Return( res)
 
 class GetBaseInfo(HelperHandler):
     @gen.coroutine
     def _deal_request(self):
         logging.debug("GetBaseInfo, %s", self.dump_req())
-
         self.set_header("Content-Type", "application/json; charset=utf-8")
-        pet_dao = self.settings["pet_dao"]
-        device_dao = self.settings["device_dao"]
-        conf = self.settings["appconfig"]
         custom_headers = self.custom_headers()
         res = {"status": error_codes.EC_SUCCESS}
-
-        uid = None
-        token = None
-        pet_id = -1
-        x_os_int=23
-
+        x_os_int = 23
         try:
             uid = int(self.get_argument("uid"))
             token = self.get_argument("token")
@@ -44,72 +91,18 @@ class GetBaseInfo(HelperHandler):
             res["status"] = error_codes.EC_INVALID_ARGS
             self.res_and_fini(res)
             return
-
-        try:
-            st = yield self.check_token("OnGetBaseInfo", res, uid, token)
-            if not st:
-               return
-            res["pet_id"] = 0
-            res["device_imei"] = ""
-            res["wifi_bssid"] = ""
-            res["wifi_ssid"] = ""
-            res["has_reboot"] = 0
-            res["longitude"]=-1
-            res["latitude"]=-1
-            res["agree_policy"]=0
-            res["outdoor_on_off"]=0
-            res["outdoor_wifi_bssid"]=""
-            res["outdoor_wifi_ssid"]=""
-            res["outdoor_in_protected"]=0
-            info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei",
-                                                     "home_wifi","has_reboot","home_location","agree_policy","outdoor_on_off","outdoor_wifi","outdoor_in_protected"))
-            if not info:
-                logging.warning("GetBaseInfo in pet dao, not found, %s", self.dump_req())
-                # device_info = yield device_dao.get_device_info_by_uid(uid,("imei",))
-                # if not device_info:
-                #     logging.warning("GetBaseInfo in device dao, not found, %s", self.dump_req())
-                # else:
-                #     device_imei = device_info.get("imei", "")
-                #     if device_imei is not None:
-                #         res["device_imei"] = device_imei
-            else:
-                pet_id = info.get("pet_id", 0)
-                if pet_id < 0:
-                    res["pet_id"] = 0
-                else:
-                    res["pet_id"] = pet_id
-                res["has_reboot"] = info.get("has_reboot",0)
-                device_imei = info.get("device_imei", "")
-                if device_imei is not None and utils.is_imei_valide(str(device_imei)):
-                    res["device_imei"] = device_imei
-                home_wifi = info.get("home_wifi", None)
-                if home_wifi is not None:
-                    res["wifi_bssid"] = home_wifi["wifi_bssid"]
-                    res["wifi_ssid"] = home_wifi["wifi_ssid"]
-                home_location=info.get("home_location",None)
-                if home_location is not None:
-                    res["longitude"]=home_location["longitude"]
-                    res["latitude"]=home_location["latitude"]
-                res["agree_policy"]=int(info.get("agree_policy",0))
-                res["outdoor_on_off"]=int(info.get("outdoor_on_off",0))
-                outdoor_wifi=info.get("outdoor_wifi",None)
-                if outdoor_wifi is not None:
-                    res["outdoor_wifi_bssid"] = outdoor_wifi["outdoor_wifi_bssid"]
-                    res["outdoor_wifi_ssid"]=outdoor_wifi["outdoor_wifi_ssid"]
-                res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
-                #补解绑清除x_os_int的漏洞
-                yield pet_dao.update_pet_info_by_uid(uid,device_os_int=x_os_int)
-        except Exception, e:
-            logging.error("GetBaseInfo, error, %s %s", self.dump_req(),
-                          self.dump_exp(e))
-            res["status"] = error_codes.EC_SYS_ERROR
-            self.res_and_fini(res)
-            return
-
-# 成功
-        logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
+        st = yield self.check_token("OnGetBaseInfo", res, uid, token)
+        pet_dao = self.settings["pet_dao"]
+        yield pet_dao.update_pet_info_by_uid(uid,device_os_int=x_os_int)
+        if not st:
+            res["status"] = error_codes.EC_USER_NOT_LOGINED
+        else:
+            res = yield self.get_base_info(pet_dao, uid, pet_id)
+        if res["status"] == error_codes.EC_SUCCESS:
+            logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
+        else:
+            logging.error("GetBaseInfo, error, req:%s res:%s", self.dump_req(),res)
         self.res_and_fini(res)
-
     def post(self):
         return self._deal_request()
 

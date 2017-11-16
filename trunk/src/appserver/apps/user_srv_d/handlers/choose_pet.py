@@ -15,7 +15,7 @@ from lib import utils
 #from lib import sys_config
 #from lib.sys_config import SysConfig
 from pymongo import errors
-
+from get_base_info import get_base_info
 class ChoosePet(HelperHandler):
     @gen.coroutine
     def _deal_request(self):
@@ -58,8 +58,6 @@ class ChoosePet(HelperHandler):
             res["status"] = error_codes.EC_SYS_ERROR
             self.res_and_fini(res)
             return
-        res["imei"] = imei
-
         try:
             #切换主控设备
             pet_info_now = yield pet_dao.get_pet_info(("pet_id",),uid = uid, choice = 1)
@@ -67,7 +65,7 @@ class ChoosePet(HelperHandler):
                 old_pet_id = pet_info_now.get("pet_id", -1)
                 yield pet_dao.update_pet_info(old_pet_id, choice = 0)
             yield pet_dao.update_pet_info(pet_id, choice = 1)
-            res["status"] = error_codes.EC_SUCCESS
+            res = get_base_info(pet_dao, uid, pet_id)
         except Exception, e:
             logging.warning("ChoosePet,uid:%d imei:%s error, %s %s", uid, imei, self.dump_req(),
                             self.dump_exp(e))
