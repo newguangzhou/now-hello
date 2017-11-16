@@ -245,6 +245,17 @@ class TerminalHandler:
                     app_electric_quantity-=5
                 else:
                     app_electric_quantity=electric_quantity
+        #解包
+        str_pk = str(pk)
+        logger.debug(
+            "OnReportLocationInfoReq, parse packet success, pk=\"%s\" id=%u peer=%s",
+            str_pk, conn_id, peer)
+        self._broadcastor.register_conn(conn_id, pk.imei)
+        self.imei_timer_mgr.add_imei(pk.imei)
+
+        self._OnOpLog('c2s header=%s pk=%s peer=%s' % (header, str_pk, peer),
+                      pk.imei)
+        locator_time = pk.location_info.locator_time
         # 电量突然跳零的处理
         # pk.electric_quantity = app_electric_quantity
         pet_info = yield self.pet_dao.get_pet_info(
@@ -254,28 +265,19 @@ class TerminalHandler:
             device_imei=pk.imei)
 
         now_calorie = pk.calorie
+        diary = datetime.datetime.combine(locator_time.date(), datetime.time.min)
         if pet_info is not None:
             # 卡路里重启调零的处理
             # sn_end_num = int(header.sn[-4:])
             # if sn_end_num <= 3:
-            temp_diary = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
-            res_info =yield self.pet_dao.get_sport_info(pet_info["pet_id"], temp_diary, datetime.datetime.now())
+            tmp_end_time = datetime.datetime.combine(locator_time.date(), datetime.time.max)
+            res_info =yield self.pet_dao.get_sport_info(pet_info["pet_id"], diary, tmp_end_time)
             if res_info is not None and res_info.count()>0:
                     if res_info[0].get("calorie", 0) > now_calorie:
                         now_calorie = res_info[0].get("calorie", 0)
         pk.calorie = now_calorie
         # 卡路里突然调零的处理
 
-        str_pk = str(pk)
-
-        logger.debug(
-            "OnReportLocationInfoReq, parse packet success, pk=\"%s\" id=%u peer=%s",
-            str_pk, conn_id, peer)
-        self._broadcastor.register_conn(conn_id, pk.imei)
-        self.imei_timer_mgr.add_imei(pk.imei)
-
-        self._OnOpLog('c2s header=%s pk=%s peer=%s' % (header, str_pk, peer),
-                      pk.imei)
         #发送设备在线消息
         now_time = datetime.datetime.now()
         yield self._SendOnlineMsg(pk.imei, app_electric_quantity, now_time)
@@ -285,7 +287,6 @@ class TerminalHandler:
         if need_send_ack:
             ack = terminal_packets.ReportLocationInfoAck(header.sn)
             yield self._send_res(conn_id, ack, pk.imei, peer)
-        locator_time = pk.location_info.locator_time
         locator_status = pk.location_info.locator_status
         lnglat = []
         lnglat2 = []
@@ -406,12 +407,11 @@ class TerminalHandler:
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
                                        battery_status, now_time)
         #//add device log
-        #print "---------------add device log ------------",pk.imei,pk.calorie, location_info
         yield self.new_device_dao.add_device_log(imei=pk.imei, calorie=pk.calorie, location = location_info)
         #add sport info
         if pet_info is not None:
             sport_info = {}
-            sport_info["diary"] = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
+            sport_info["diary"] = diary 
             sport_info["step_count"] = pk.step_count
             sport_info["distance"] = pk.distance
             sport_info["target_energy"] = pet_info.get("target_energy", 0)
@@ -1070,7 +1070,6 @@ class TerminalHandler:
                 device_info = yield self.new_device_dao.get_device_info(
                     imei, ("electric_quantity",))
                 electric_quantity = device_info.get("electric_quantity", -1)
-                print "uid:",uid,"device_info:",device_info
                 offline_reason = 3
                 if electric_quantity == 0:
                     offline_reason = 1

@@ -38,8 +38,6 @@ class LocationInfo(terminal_proto.ComplexField):
         self._data = data
         self.fields["locator_status"] = terminal_proto.Field(
             terminal_proto.INTEGER_FIELD).FromStr(data[0:1])
-        #print data
-        #print self.locator_status
         # 获取定位数据
         if self.locator_status == LOCATOR_STATUS_GPS:  # GPS
             # 获取经度类型(E or W)

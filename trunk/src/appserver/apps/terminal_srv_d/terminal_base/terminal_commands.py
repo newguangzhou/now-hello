@@ -40,7 +40,6 @@ class Params:
 
         #协议格式:
         #    005,0#1#2#3#4#5#6#7#8#9#10#11
-        print "command data:",data
         out_segs = data.split(",")
         if len(out_segs) != 2 or out_segs[0] != "005":
             raise CommandException("Invalid params command:",data)
