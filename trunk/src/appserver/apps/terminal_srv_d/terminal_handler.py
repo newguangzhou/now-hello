@@ -498,6 +498,7 @@ class TerminalHandler:
         if pet_info is not None:
             #紧急搜索模式下判断是否需要开启GPS
             device_setting = self.device_setting_mgr.get_device_setting(pk.imei)
+            yield device_setting.load()
             if pet_info.get("pet_status",0) == type_defines.PETSTATUS_FINDING:#紧急搜索状态
                 logger.debug("imei:%s in urgent search mode, radius:%d, locator status:%d", pk.imei, radius, pk.location_info.locator_status)
                 #设置J01时间为1分钟

@@ -21,11 +21,13 @@ class DeviceSetting:
     def load(self):
         res = yield self._dao.get_device_info(self._imei, ["setting","update_time"])
         self._setting = res.get("setting","005,0#0#0#0#0##0#0#0#0#5000")
+	logger.debug("imei:%s load setting:%s,self._setting:%s",self._imei, res, self._setting)
         if self.parse(self._setting):
-            print "reload imei:",self._imei," setting=",self._setting
+	    logger.debug("imei:%s parse setting:%s success",self._imei, self._setting)
             #traceback.print_stack()
             raise gen.Return(True)
         else:
+	    logger.debug("imei:%s parse setting:%s fail",self._imei, self._setting)
             raise gen.Return(False)
 
     @gen.coroutine
@@ -45,6 +47,7 @@ class DeviceSetting:
         else:
             return True
     def __str__(self):
+        logger.debug("__str__, imei:%s setting :%s param:%s",self._imei, self._setting, self._params)
         return str(self._params)
 
 class DeviceSettingMgr:
@@ -53,7 +56,6 @@ class DeviceSettingMgr:
         self._dao = dao
     def get_device_setting(self, imei):
         device = DeviceSetting(imei, self._dao )
-        device.load()
         return device
 
 
