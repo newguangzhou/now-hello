@@ -45,6 +45,7 @@ class Login(HelperHandler):
                 self.arg_error("device_type")
             device_token = self.get_argument("device_token")
             code = self.get_argument("code")
+            x_os_int=custom_headers.get("x_os_int",23)
         except Exception, e:
             logging.warning("OnLogin, invalid args, %s %s", self.dump_req(),
                             self.dump_exp(e))
@@ -72,6 +73,12 @@ class Login(HelperHandler):
             if uid is None:
                 #注册
                 uid = yield self.register(phone_num)
+                try:
+                    pet_id = int(time.time() * -1000)
+                    device_imei = int(time.time() * -1000)
+                    yield pet_dao.update_pet_info_by_uid(uid,pet_id=pet_id,device_imei=device_imei,mobile_num=phone_num,device_os_int=x_os_int)
+                except Exception, ex:
+                    logging.error("update pet info by uid error %s", ex)
             else:
                 # 检查账号状态
                 st = yield self.check_account_status("OnLogin", res, uid)
@@ -81,16 +88,12 @@ class Login(HelperHandler):
         # 生成token
             expire_secs = SysConfig.current().get(
                 sys_config.SC_TOKEN_EXPIRE_SECS)
-            x_os_int=custom_headers.get("x_os_int",23)
             token = yield auth_dao.gen_user_token(uid, True, device_type,device_token,
                 expire_secs, custom_headers["platform"], custom_headers["device_model"],x_os_int)
             res["uid"] = uid
             res["token"] = token
             res["token_expire_secs"] = expire_secs
-            try:
-                yield pet_dao.update_pet_info_by_uid(uid,mobile_num=phone_num,device_os_int=x_os_int)
-            except Exception, ex:
-                logging.error("update pet info by uid error %s", ex)
+
         except Exception, e:
             logging.error("OnLogin, error, %s %s", self.dump_req(),
                           self.dump_exp(e))
