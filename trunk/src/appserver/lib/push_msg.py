@@ -99,8 +99,8 @@ def new_location_change_msg(client_type = CT_ANDROID, **kwargs):
     #pet_id,name, latitude, longitude, location_time, radius, locator_status, station_status
     msg = {"type": "pet",
            "signal": "location-change",
-           "data": { kwargs
-           }}
+           "data": kwargs
+           }
     if client_type == CT_IOS:
         return ios_msg(msg)
     else:
