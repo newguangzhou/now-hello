@@ -19,32 +19,40 @@ def ios_msg(msg):
     else:
         return json.dumps(msg, ensure_ascii=False, encoding="utf8")
 
-def new_device_off_line_msg(offline_reason, client_type = CT_ANDROID):
+def new_device_off_line_msg(client_type, pet_id, nick ,offline_reason ):
     msg = {"type": "device",
            "signal": "offline",
            "data" : {
+               "pet_id":pet_id,
+               "nick":nick,
                "offline_reason": offline_reason
                 }
            }
     if client_type == CT_IOS:
         return ios_msg(msg)
     else:
-        return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+        return android_msg(msg)
 
-def new_device_on_line_msg(battery,datetime):
+def new_device_on_line_msg(client_type , pet_id, nick ,battery,datetime):
     msg = {"type": "device",
            "signal": "online",
-           "data": {"battery_level": battery,
-                    "datetime":datetime} }
-    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+           "data": {
+               "pet_id":pet_id,
+               "nick":nick,
+               "battery_level": battery,
+               "datetime":datetime} }
+    if client_type == CT_IOS:
+        return ios_msg(msg)
+    else:
+        return android_msg(msg)
 
-def new_pet_outdoor_in_portected_msg(client_type, pet_id, name):
+def new_pet_outdoor_in_portected_msg(client_type, pet_id, nick):
     msg = {"type": "pet",
            "signal": "outdoor_in_protected",
            "data":
                {
                    "pet_id":pet_id,
-                   "name":name
+                   "nick": nick
                }
            }
     if client_type == CT_IOS:
@@ -52,13 +60,13 @@ def new_pet_outdoor_in_portected_msg(client_type, pet_id, name):
     else:
         return android_msg(msg)
 
-def new_pet_outdoor_out_portected_msg(client_type, pet_id, name):
+def new_pet_outdoor_out_portected_msg(client_type, pet_id, nick):
     msg = {"type": "pet",
            "signal": "outdoor_out_protected",
            "data":
                {
                    "pet_id":pet_id,
-                   "name":name
+                   "nick": nick
                }
            }
     if client_type == CT_IOS:
@@ -66,13 +74,13 @@ def new_pet_outdoor_out_portected_msg(client_type, pet_id, name):
     else:
         return android_msg(msg)
 
-def new_pet_leave_home_msg(client_type, pet_id ,name):
+def new_pet_leave_home_msg(client_type, pet_id, nick):
     msg = {"type": "pet",
            "signal": "not-home",
            "data":
                {
                    "pet_id":pet_id,
-                   "name":name
+                   "nick": nick
                }
            }
     if client_type == CT_IOS:
@@ -80,13 +88,13 @@ def new_pet_leave_home_msg(client_type, pet_id ,name):
     else:
         return android_msg(msg)
 
-def new_pet_at_home_msg(client_type, pet_id, name):
+def new_pet_at_home_msg(client_type, pet_id, nick):
     msg = {"type": "pet",
            "signal": "home",
            "data":
                {
                    "pet_id":pet_id,
-                   "name":name
+                   "nick": nick
                }
            }
     if client_type == CT_IOS:
@@ -109,7 +117,7 @@ def new_location_change_msg(client_type = CT_ANDROID, **kwargs):
 # 0 is common-battery
 # 1 is low-battery
 # 2 is ultra-low-battery
-def new_now_battery_msg(datetime, battery, battery_status):
+def new_now_battery_msg(client_type, pet_id, nick, datetime, battery, battery_status):
     signal = "common-battery"
     if battery_status == 1:
         signal = "low-battery"
@@ -118,8 +126,13 @@ def new_now_battery_msg(datetime, battery, battery_status):
     msg = {"type": "device",
            "signal": signal,
            "data": {"battery_level": battery,
-                    "datetime":datetime}}
-    return json.dumps(msg, ensure_ascii=False, encoding="utf8")
+                    "datetime":datetime,
+                    "pet_id": pet_id,
+                    "nick": nick}}
+    if client_type == CT_IOS:
+        return ios_msg(msg)
+    else:
+        return android_msg(msg)
 
 
 def new_remot_login_msg():

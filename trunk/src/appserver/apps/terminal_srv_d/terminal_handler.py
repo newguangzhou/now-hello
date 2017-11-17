@@ -296,6 +296,8 @@ class TerminalHandler:
         radius3 = -1
         station_status = 0#基站信号是否正常  0:正常  1：信号异常(信号差)
         location_info = {}
+        pet_id = 0
+        nick = ""
 
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_GPS:
 
@@ -422,7 +424,7 @@ class TerminalHandler:
         if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
             yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
-                                       battery_status, now_time)
+                                       battery_status, now_time,pet_id, nick)
         #//add device log
         yield self.new_device_dao.add_device_log(imei=pk.imei, calorie=pk.calorie, location = location_info)
         #add sport info
@@ -624,7 +626,7 @@ class TerminalHandler:
         raise gen.Return(True)
 
     @gen.coroutine
-    def _SendBatteryMsg(self, imei, battery, battery_statue, datetime):
+    def _SendBatteryMsg(self, imei, battery, battery_statue, datetime, pet_id, nick):
         pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "device_os_int", "mobile_num"),
                                                    device_imei=imei)
         if pet_info is not None:
@@ -648,11 +650,11 @@ class TerminalHandler:
                     self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低")
                     return
 
-            msg = push_msg.new_now_battery_msg(
+            msg_android = push_msg.new_now_battery_msg(push_msg.CT_ANDROID, pet_id, nick,
                 utils.date2str(datetime), battery, battery_statue)
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
                 # ios去掉推送
                 # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
@@ -661,7 +663,7 @@ class TerminalHandler:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
                                                     desc="追踪器电量低，请及时充电！",
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload="追踪器电量低，请及时充电！",
@@ -671,7 +673,7 @@ class TerminalHandler:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
                                                     desc="追踪器电量超低，请及时充电！",
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload="追踪器电量超低，请及时充电！",
@@ -1014,22 +1016,30 @@ class TerminalHandler:
 
     @gen.coroutine
     def _SendOnlineMsg(self, imei, battery, datetime):
-        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
+        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "nick"),
                                                    device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
-            msg = push_msg.new_device_on_line_msg(battery,
+            msg_android = push_msg.new_device_on_line_msg(push_msg.CT_ANDROID,
+                                                  pet_info.get("pet_id",0),
+                                                  pet_info.get("nick","宠物"),
+                                                  battery,
                                                   utils.date2str(datetime))
+            msg_ios = push_msg.new_device_on_line_msg(push_msg.CT_IOS,
+                                                          pet_info.get("pet_id",0),
+                                                          pet_info.get("nick","宠物"),
+                                                          battery,
+                                                          utils.date2str(datetime))
             self.updateDeviceStatus(imei)
 
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
-                yield self.msg_rpc.push_ios(uids=str(uid), payload=msg,channel=2,
+                yield self.msg_rpc.push_ios(uids=str(uid), payload=msg_ios,channel=2,
                                              extra={"type":"online"}
                                              )
             except Exception, e:
@@ -1059,7 +1069,7 @@ class TerminalHandler:
                 conn = self.conn_mgr.GetConn(conn_id)
                 if conn is not None:
                     conn.close()
-            pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
+            pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "nick"),
                                                        device_imei=imei)
             if pet_info is not None:
                 uid = pet_info.get("uid", None)
@@ -1076,8 +1086,14 @@ class TerminalHandler:
                     location_info = yield self.pet_dao.get_last_location_info(pet_info["pet_id"])
                     if location_info.get("station_status") == 1:
                         offline_reason = 2
-                msg_ios = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_IOS)
-                msg_android = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_ANDROID)
+                msg_ios = push_msg.new_device_off_line_msg(push_msg.CT_IOS,
+                                                           pet_info.get("pet_id",0),
+                                                           pet_info.get("nick","宠物"),
+                                                           offline_reason)
+                msg_android = push_msg.new_device_off_line_msg( push_msg.CT_ANDROID,
+                                                                pet_info.get("pet_id",0),
+                                                                pet_info.get("nick","宠物"),
+                                                                offline_reason)
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )
