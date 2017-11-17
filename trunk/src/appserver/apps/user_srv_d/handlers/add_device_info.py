@@ -41,7 +41,9 @@ class AddDeviceInfo(HelperHandler):
             token = self.get_argument("token")
             st = yield self.check_token("OnAddDeviceInfo", res, uid, token)
             if not st:
-               return
+                res["status"] = error_codes.EC_INVALID_TOKEN 
+                self.res_and_fini(res)
+                return
 
             imei = self.get_argument("imei")
             device_name = self.get_argument("device_name")
@@ -95,11 +97,12 @@ class AddDeviceInfo(HelperHandler):
                     else:
                         res["old_account"] = ""
                         info = yield user_dao.get_user_info(old_uid, ("phone_num",))
-                        logging.info("AddDeviceInfo,get phone num:%s",info)
-                        old_account=str(info.get("phone_num", ""))
-                        if old_account is not None and len(old_account)>=9:
-                            old_account=old_account[0:3]+"_**_"+old_account[-4:]
-                        res["old_account"] = old_account
+                        if info:
+                            old_account=str(info.get("phone_num", ""))
+                            if old_account is not None and len(old_account)>=9:
+                                old_account=old_account[0:3]+"_**_"+old_account[-4:]
+                            res["old_account"] = old_account
+                            logging.info("AddDeviceInfo,old account uid:%d phone num:%s",old_uid, old_account)
                         if old_user_info.get("init",0) == 0:
                             res["status"] = error_codes.EC_BINDDING_IN_PROGRESS #另外进程在绑定,等5分钟再试
             except Exception, ee:
