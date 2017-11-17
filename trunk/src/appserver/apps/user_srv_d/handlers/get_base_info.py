@@ -19,6 +19,7 @@ def get_base_info(pet_dao,uid, pet_id):
     res = {"status": error_codes.EC_SUCCESS}
 
     try:
+        
         res["pet_id"] = 0
         res["device_imei"] = ""
         res["wifi_bssid"] = ""
@@ -38,12 +39,12 @@ def get_base_info(pet_dao,uid, pet_id):
             info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei",
                                                      "home_wifi","has_reboot","home_location","agree_policy","outdoor_on_off","outdoor_wifi","outdoor_in_protected"))
             if info:
-                pet_id = info.get("pet_id", -1)
+                pet_id = info.get("pet_id", 0)
         if not info or pet_id <= 0:
             logging.warning("GetBaseInfo in pet dao, not found,uid:%d pet_id:%d",
                             uid, pet_id)
-            res["status"] = error_codes.EC_PET_NOT_EXIST
-            raise gen.Return(res)
+            #res["status"] = error_codes.EC_PET_NOT_EXIST
+            #raise gen.Return(res)
         else:
             res["pet_id"] = pet_id
             res["has_reboot"] = info.get("has_reboot",0)
@@ -66,8 +67,7 @@ def get_base_info(pet_dao,uid, pet_id):
             res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
             #补解绑清除x_os_int的漏洞
     except Exception, e:
-        res["status"] = error_codes.EC_SYS_ERROR
-        raise gen.Return( res)
+            res["status"] = error_codes.EC_SYS_ERROR
     raise gen.Return( res)
 
 class GetBaseInfo(HelperHandler):

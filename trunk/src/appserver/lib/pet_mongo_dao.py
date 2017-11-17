@@ -135,6 +135,9 @@ class PetMongoDAO(MongoDAOBase):
                     return cursor[0]
                 else:
                     return None
+            else:
+                return None
+
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
 
@@ -185,7 +188,8 @@ class PetMongoDAO(MongoDAOBase):
             before_5_min = cur - datetime.timedelta(minutes = 5)
             #删除5分钟前没有初始化完的设备，
             tb.delete_one({"device_imei":imei,"init":0, "register_date":{"$lt":before_5_min}})
-            info={"uid":uid,"device_imei":imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int, "init" : 0, "choice":0 }
+            print before_5_min
+            info={"uid":uid,"device_imei":imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int, "init" : 0, "choice":0 ,"register_date":cur}
             res=tb.insert_one(info)
             logging.info("bind_device, uid:%d imei:%s, info:%s success", uid, imei, info)
             return res

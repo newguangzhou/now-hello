@@ -40,6 +40,11 @@ class ChoosePet(HelperHandler):
             self.res_and_fini(res)
             return
 
+        if pet_id <= 0 :
+            res["status"] = error_codes.EC_PET_NOT_EXIST 
+            self.res_and_fini(res)
+            return
+
         # get imei
         try:
 
@@ -63,7 +68,8 @@ class ChoosePet(HelperHandler):
             pet_info_now = yield pet_dao.get_pet_info(("pet_id",),uid = uid, choice = 1)
             if pet_info_now:
                 old_pet_id = pet_info_now.get("pet_id", -1)
-                yield pet_dao.update_pet_info(old_pet_id, choice = 0)
+                if old_pet_id > 0:
+                    yield pet_dao.update_pet_info(old_pet_id, choice = 0)
             yield pet_dao.update_pet_info(pet_id, choice = 1)
             res = yield get_base_info(pet_dao, uid, pet_id)
         except Exception, e:
