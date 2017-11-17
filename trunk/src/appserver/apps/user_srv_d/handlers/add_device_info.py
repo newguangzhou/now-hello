@@ -85,7 +85,7 @@ class AddDeviceInfo(HelperHandler):
             res["status"] = error_codes.EC_EXIST
             try:
                 user_dao = self.settings["user_dao"]
-                old_user_info = yield pet_dao.get_pet_info(("uid",),
+                old_user_info = yield pet_dao.get_pet_info(("uid","init"),
                                                            device_imei=imei)
                 if old_user_info is not None:
                     old_uid = old_user_info.get("uid","")
@@ -100,6 +100,8 @@ class AddDeviceInfo(HelperHandler):
                         if old_account is not None and len(old_account)>=9:
                             old_account=old_account[0:3]+"_**_"+old_account[-4:]
                         res["old_account"] = old_account
+                        if old_user_info.get("init",0) == 0:
+                            res["status"] = error_codes.EC_BINDDING_IN_PROGRESS #另外进程在绑定,等5分钟再试
             except Exception, ee:
                 logging.error("AddDeviceInfo, imei has exist but can't get the old account: %s %s",
                                 self.dump_req(),
