@@ -45,7 +45,7 @@ class Login(HelperHandler):
                 self.arg_error("device_type")
             device_token = self.get_argument("device_token")
             code = self.get_argument("code")
-            x_os_int=custom_headers.get("x_os_int",23)
+            x_os_int=int(custom_headers.get("x_os_int",23))
         except Exception, e:
             logging.warning("OnLogin, invalid args, %s %s", self.dump_req(),
                             self.dump_exp(e))

@@ -85,7 +85,7 @@ class GetBaseInfo(HelperHandler):
             token = self.get_argument("token")
             pet_id = int(self.get_argument("pet_id", -1))
             try:
-                x_os_int = custom_headers.get("x_os_int", 23)
+                x_os_int = int(custom_headers.get("x_os_int", 23))
             except Exception, e:
                 pass
         except Exception, e:

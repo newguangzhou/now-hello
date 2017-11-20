@@ -35,6 +35,7 @@ def new_user_infos_row():
     tmp["register_date"] = cur
     tmp["last_login_date"] = cur
     tmp["mod_date"] = cur
+    tmp["client_os_ver"]  = 23
     return tmp
 
 

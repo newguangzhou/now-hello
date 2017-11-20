@@ -53,8 +53,8 @@ class SetHomeLocation(HelperHandler):
 
         try:
             if pet_id <=0 :
-                pet_choice = yield pet_dao.get_pet_info(("pet_id",),uid = uid, init = 0)
-                if pet_choice is None:#不是处于绑定状态
+                pet_wait_init = yield pet_dao.get_pet_info(("pet_id",),uid = uid, init = 0)
+                if pet_wait_init is None:#不是处于绑定界面，是修改home_location界面
                     pet_choice = yield pet_dao.get_pet_info(("pet_id",),uid = uid, choice = 1)
                     if pet_choice is None:#没有被选定的宠物,这种情况不应该出现
                         logging.warning("SetHomeLocation, uid:%d pet_choice not found. set fail, %s", uid,self.dump_req())
@@ -63,6 +63,8 @@ class SetHomeLocation(HelperHandler):
                         return
                     else:
                         pet_id = pet_choice.get("pet_id",-1)
+                else:
+                    pet_id = pet_wait_init.get("pet_id", -1)
 
             if pet_id <= 0:
                 logging.warning("SetHomeLocation, pet_id <=0 ,set fail, %s", self.dump_req())
