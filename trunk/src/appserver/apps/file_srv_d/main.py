@@ -48,7 +48,7 @@ webapp = Application(
          (r"/file/pet/upload_logo", handlers.user.upload_logo.UploadLogo),
          (r"/file/get", handlers.get.Get),
         ],
-        autoreload = False,
+        autoreload = True,
         files_dao = FilesDAO.new(mongo_meta = mongo_conf.files_mongo_meta),
         auth_dao = AuthDAO.new(mongo_meta = mongo_conf.auth_mongo_meta),
         user_dao = UserDAO.new(mongo_meta = mongo_conf.user_mongo_meta),
