@@ -54,6 +54,7 @@ class TerminalHandler:
         self.op_log_dao = kwargs.get("op_log_dao", None)
         self.new_device_dao = kwargs.get("new_device_dao", None)
         self.pet_dao = kwargs.get("pet_dao", None)
+        self.user_dao = kwargs.get("user_dao", None)
         self.msg_rpc = kwargs.get("msg_rpc", None)
         self.unreply_msg_mgr = kwargs.get("unreply_msg_mgr", None)
 
@@ -634,20 +635,21 @@ class TerminalHandler:
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
+            user_info = yield self.user_dao.get_user_info("client_os_ver",uid=uid)
 
             message = ''
             sms_type="low_battery"
             if battery_statue == 1:
                 message = "设备低电量，请注意充电"
                 sms_type = "low_battery"
-                if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "低")
+                if (int)(user_info.get('client_os_ver', 23)) > 23 and pet_info.get('mobile_num') is not None:
+                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "低("+nick+")")
                     return
             elif battery_statue == 2:
                 message = "设备超低电量，请注意充电"
-                if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
+                if (int)(pet_info.get('client_os_ver', 23)) > 23 and pet_info.get('mobile_num') is not None:
                     sms_type = "superlow_battery"
-                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低")
+                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低("+nick+")")
                     return
 
             msg_android = push_msg.new_now_battery_msg(push_msg.CT_ANDROID, pet_id, nick,
@@ -662,21 +664,21 @@ class TerminalHandler:
                 if battery_statue == 1:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
-                                                    desc="追踪器电量低，请及时充电！",
+                                                    desc= nick + " 追踪器电量低，请及时充电！",
                                                     payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload="追踪器电量低，请及时充电！",
+                                                            payload= nick + " 追踪器电量低，请及时充电！",
                                                             extra=push_msg.extra({"type":"low_battery"})
                                                             )
                 elif battery_statue == 2:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
-                                                    desc="追踪器电量超低，请及时充电！",
+                                                    desc= nick + " 追踪器电量超低，请及时充电！",
                                                     payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload="追踪器电量超低，请及时充电！",
+                                                            payload=nick + " 追踪器电量超低，请及时充电！",
                                                             extra=push_msg.extra({"type":"superlow_battery"})
                                                             )
 

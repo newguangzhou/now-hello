@@ -24,6 +24,7 @@ _USER_INFOS_TB_ROW_DEFINE = {
     "home_wifi": ({}, dict),
     "register_date": (None, datetime.datetime),
     "last_login_date": (None, datetime.datetime),
+    "client_os_ver": (23, int),   #客户端操作系统版本号,IOS=23，ANDROID为实际版本号
     "mod_date": (None, datetime.datetime),
 }
 

@@ -65,7 +65,6 @@ def get_base_info(pet_dao,uid, pet_id):
                 res["outdoor_wifi_bssid"] = outdoor_wifi["outdoor_wifi_bssid"]
                 res["outdoor_wifi_ssid"]=outdoor_wifi["outdoor_wifi_ssid"]
             res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
-            #补解绑清除x_os_int的漏洞
             res["pet_count"] = yield pet_dao.get_pet_count(uid)
 
     except Exception, e:
@@ -96,12 +95,13 @@ class GetBaseInfo(HelperHandler):
             return
         st = yield self.check_token("OnGetBaseInfo", res, uid, token)
         pet_dao = self.settings["pet_dao"]
+        user_dao = self.settings["user_dao"]
         if not st:
             res["status"] = error_codes.EC_USER_NOT_LOGINED
         else:
             res = yield get_base_info(pet_dao, uid, pet_id)
         if res["status"] == error_codes.EC_SUCCESS:
-            yield pet_dao.update_pet_info_by_uid(uid,device_os_int=x_os_int)
+            yield user_dao.update_user_info(uid,client_os_ver =x_os_int)
             logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
         else:
             logging.error("GetBaseInfo, error, req:%s res:%s", self.dump_req(),res)

@@ -96,6 +96,7 @@ if __name__ == '__main__':
         op_log_dao=OPLogDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta),
         broadcastor=broadcastor,
         pet_dao=PetDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta),
+        user_dao=PetDAO.new(mongo_meta=mongo_conf.op_log_mongo_meta),
         new_device_dao=NewDeviceDAO.new(
             mongo_meta=mongo_conf.op_log_mongo_meta),
         msg_rpc=msg_rpc,

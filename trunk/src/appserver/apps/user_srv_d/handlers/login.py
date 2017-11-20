@@ -72,11 +72,11 @@ class Login(HelperHandler):
             logging.info(uid)
             if uid is None:
                 #注册
-                uid = yield self.register(phone_num)
+                uid = yield self.register(phone_num, x_os_int)
                 try:
                     pet_id = int(time.time() * -1000)
                     device_imei = int(time.time() * -1000)
-                    yield pet_dao.update_pet_info_by_uid(uid,pet_id=pet_id,device_imei=device_imei,mobile_num=phone_num,device_os_int=x_os_int)
+                    yield pet_dao.update_pet_info_by_uid(uid,pet_id=pet_id,device_imei=device_imei,mobile_num=phone_num)
                 except Exception, ex:
                     logging.error("update pet info by uid error %s", ex)
             else:
@@ -112,7 +112,7 @@ class Login(HelperHandler):
         return self._deal_request()
 
     @gen.coroutine
-    def register(self, phone_num):
+    def register(self, phone_num, client_os_ver):
         auth_dao = self.settings["auth_dao"]
         user_dao = self.settings["user_dao"]
         gid_rpc = self.settings["gid_rpc"]
@@ -121,8 +121,8 @@ class Login(HelperHandler):
 
         # 添加用户信息
         try:
-            yield user_dao.add_user_info(uid=uid, phone_num=phone_num)
+            yield user_dao.add_user_info(uid=uid, phone_num=phone_num, client_os_ver = client_os_ver)
         except Exception, e:
-            utils.recover_log("user login error", uid=uid, phone_num=phone_num)
+            utils.recover_log("user login error", uid=uid, phone_num=phone_num, client_os_ver = client_os_ver)
             raise e
         raise gen.Return(uid)
