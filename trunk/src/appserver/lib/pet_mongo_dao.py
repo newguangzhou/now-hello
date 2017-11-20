@@ -124,7 +124,7 @@ class PetMongoDAO(MongoDAOBase):
                     raise PetMongoDAOException(
                         "Unknown pet infos row column \"%s\"", v)
                 qcols[v] = 1
-            cursor = tb.find({"uid": uid, "choice":1}, qcols )
+            cursor = tb.find({"uid":uid, "choice":1}, qcols )
             if cursor.count() > 0:
                 return cursor[0]
             cursor = tb.find({"uid": uid}, qcols )
@@ -146,7 +146,7 @@ class PetMongoDAO(MongoDAOBase):
     def get_pet_count(self, uid):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            cursor = tb.find({"uid",uid})
+            cursor = tb.find({"uid":uid})
             return cursor.count()
         ret = yield self.submit(_callback)
         raise gen.Return(ret)

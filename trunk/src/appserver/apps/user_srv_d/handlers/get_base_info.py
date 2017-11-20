@@ -69,7 +69,8 @@ def get_base_info(pet_dao,uid, pet_id):
             res["pet_count"] = yield pet_dao.get_pet_count(uid)
 
     except Exception, e:
-            res["status"] = error_codes.EC_SYS_ERROR
+        logging.error("get_base_info fail ,err:%s trace:%s",str(e), traceback.format_exc())
+        res["status"] = error_codes.EC_SYS_ERROR
     raise gen.Return( res)
 
 class GetBaseInfo(HelperHandler):
