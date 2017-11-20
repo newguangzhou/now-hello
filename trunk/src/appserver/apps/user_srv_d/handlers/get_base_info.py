@@ -66,6 +66,8 @@ def get_base_info(pet_dao,uid, pet_id):
                 res["outdoor_wifi_ssid"]=outdoor_wifi["outdoor_wifi_ssid"]
             res["outdoor_in_protected"]=info.get("outdoor_in_protected",0)
             #补解绑清除x_os_int的漏洞
+            res["pet_count"] = yield pet_dao.get_pet_count(uid)
+
     except Exception, e:
             res["status"] = error_codes.EC_SYS_ERROR
     raise gen.Return( res)
