@@ -628,26 +628,26 @@ class TerminalHandler:
 
     @gen.coroutine
     def _SendBatteryMsg(self, imei, battery, battery_statue, datetime, pet_id, nick):
-        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "device_os_int", "mobile_num"),
+        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
                                                    device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
-            user_info = yield self.user_dao.get_user_info("client_os_ver",uid=uid)
+            user_info = yield self.user_dao.get_user_info(uid,("client_os_ver","phone_num"))
 
             message = ''
             sms_type="low_battery"
             if battery_statue == 1:
-                message = "设备低电量，请注意充电"
+                #message = "设备低电量，请注意充电"
                 sms_type = "low_battery"
-                if (int)(user_info.get('client_os_ver', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "低("+nick+")")
+                if (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                    self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), "低("+nick+")")
                     return
             elif battery_statue == 2:
-                message = "设备超低电量，请注意充电"
-                if (int)(pet_info.get('client_os_ver', 23)) > 23 and pet_info.get('mobile_num') is not None:
+                #message = "设备超低电量，请注意充电"
+                if (int)(pet_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
                     sms_type = "superlow_battery"
                     self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低("+nick+")")
                     return
@@ -899,7 +899,7 @@ class TerminalHandler:
     @gen.coroutine
     def _SendOutdoorInOrOutProtected(self,imei,is_in_protected):
         pet_info = yield self.pet_dao.get_pet_info(
-            ("pet_id", "uid", "nick",  "device_os_int", "mobile_num","outdoor_in_protected"),
+            ("pet_id", "uid", "nick","outdoor_in_protected"),
             device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
@@ -928,6 +928,8 @@ class TerminalHandler:
                 #                                         payload=msg)
             except Exception, e:
                 logger.exception(e)
+            user_info = yield self.user_dao.get_user_info(uid,("phone_num","client_os_ver"))
+
             message=""
             sms_type="outdoor_out_protected"
             if is_in_protected:
@@ -936,8 +938,8 @@ class TerminalHandler:
             else:
                 message=nick+"脱离户外保护范围，请注意安全。"
                 sms_type="outdoor_out_protected"
-            if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), nick)
+            if user_info is not None and (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), nick)
                 return
             try:
                     yield self.msg_rpc.push_android(uids=str(uid),
@@ -957,7 +959,7 @@ class TerminalHandler:
     @gen.coroutine
     def _SendPetInOrNotHomeMsg(self, imei, is_in_home):
         pet_info = yield self.pet_dao.get_pet_info(
-            ("pet_id", "uid","nick", "pet_is_in_home", "device_os_int", "mobile_num"),
+            ("pet_id", "uid","nick", "pet_is_in_home"),
             device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
@@ -996,9 +998,14 @@ class TerminalHandler:
             else:
                 message = nick+"可能离家，请确认安全。"
                 sms_type = "out_home"
+            user_info = yield self.user_dao.get_user_info(uid, ("phone_num","client_os_ver"))
+            if not user_info:
+                logger.error("uid of imei:%s not found.", imei)
+                return
 
-            if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), nick)
+
+            if (int)(user_info.get('clent_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), nick)
                 return
 
             try:
