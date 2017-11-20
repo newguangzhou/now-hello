@@ -415,9 +415,9 @@ class TerminalHandler:
             server_recv_time=time_stamp)
 
         battery_status = 0
-        if app_electric_quantity< LOW_BATTERY:
+        if app_electric_quantity<= LOW_BATTERY:
             battery_status = 1
-            if app_electric_quantity < ULTRA_LOW_BATTERY:
+            if app_electric_quantity <= ULTRA_LOW_BATTERY:
                 battery_status = 2
         device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
         # if device_info is not None:
@@ -500,7 +500,7 @@ class TerminalHandler:
                 if home_location is not None and len(lnglat) != 0:
                     distance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
                                           float(lnglat[0]), float(lnglat[1]))
-                    is_in_home = True if (distance <= radius * 2) else False
+                    is_in_home = True if (distance <= radius) else False
                     pet_is_in_home = pet_info.get("pet_is_in_home", 1)
                     if (pet_is_in_home == 1 and not is_in_home):
                         logging.debug("out-home*-imei:%s,radius:%s,distance:%s", pk.imei, radius, distance)
