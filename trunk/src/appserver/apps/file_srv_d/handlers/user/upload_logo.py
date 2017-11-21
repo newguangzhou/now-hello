@@ -88,7 +88,9 @@ class UploadLogo(HelperHandler):
                 self.res_and_fini(res)
             
             # 重命名
-            rename = "%u_logo%s" % (uid, extname)
+            timestamp= int(time.time())
+
+            rename = "%u_logo_%d%s" % (uid, timestamp,extname)
             
             # 保存文件
             fp = io.BytesIO(file["body"])
