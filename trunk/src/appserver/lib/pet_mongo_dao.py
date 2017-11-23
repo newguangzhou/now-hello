@@ -134,16 +134,20 @@ class PetMongoDAO(MongoDAOBase):
     @gen.coroutine
     def set_default_pet(self, uid ):
         def _callback(mongo_client, **kwargs):
+            #logging.debug("set_default_pet")
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             cursor = tb.find({"uid": uid,"choice":1} )
-            if cursor > 0:
+            if cursor.count() > 0:
                 return cursor[0]
             #有绑定宠物，但是没有设置choice
-            cursor = tb.find({"uid": uid} ,{"pet_id"})
-            if cursor.count() > 0 :
-                res = tb.update_one({"pet_id": cursor[0]["pet_id"]}, {"$set": {"choice":1}})
+            #logging.debug("cursor count:%d", cursor.count())
+            qcols = {"pet_id": 1}
+            cur2 = tb.find({"uid": uid} ,qcols)
+            #logging.debug("cur2 count:%d", cur2.count())
+            if cur2.count() > 0 :
+                res = tb.update_one({"pet_id": cur2[0]["pet_id"]}, {"$set": {"choice":1}})
                 if res.modified_count > 0 : 
-                    return cursor[0]
+                    return cur2[0]
                 else:
                     return None
             return None
