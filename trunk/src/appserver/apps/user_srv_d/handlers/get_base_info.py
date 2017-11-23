@@ -97,7 +97,8 @@ class GetBaseInfo(HelperHandler):
         pet_dao = self.settings["pet_dao"]
         user_dao = self.settings["user_dao"]
         if not st:
-            res["status"] = error_codes.EC_USER_NOT_LOGINED
+            #res["status"] = error_codes.EC_USER_NOT_LOGINED
+            return
         else:
             res = yield get_base_info(pet_dao, uid, pet_id)
             if res["status"] == error_codes.EC_PET_NOT_EXIST:
