@@ -137,4 +137,5 @@ if __name__ == '__main__':
     imei_timer_mgr.start()
     unreply_msg_mgr.set_on_un_reply_msg_retry_func(handler._OnUnreplyMsgsSend)
     # no_heart_msg_mgr.set_on_no_heart_func(handler._OnImeiExpires)
+    IOLoop.current().set_blocking_log_threshold(1) #处理时间超过1秒的打印日志
     IOLoop.current().start()
