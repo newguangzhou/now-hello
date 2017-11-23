@@ -57,6 +57,7 @@ class RemoveDeviceInfo(HelperHandler):
             res["has_other_dev"] = 1 if pet_count> 0 else 0
             user_dao = self.settings["user_dao"]
             yield user_dao.remove_device(uid, imei)
+            yield user_dao.update_user_info(uid, choice_petid=0)
         except Exception, e:
             logging.warning("RemoveDeviceInfo, imei:%s unbind_device_imei error, %s %s", imei, self.dump_req(),
                             self.dump_exp(e))

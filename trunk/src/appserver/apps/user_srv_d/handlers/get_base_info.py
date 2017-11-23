@@ -101,7 +101,7 @@ class GetBaseInfo(HelperHandler):
         else:
             res = yield get_base_info(pet_dao, uid, pet_id)
         if res["status"] == error_codes.EC_SUCCESS:
-            yield user_dao.update_user_info(uid,client_os_ver =x_os_int)
+            yield user_dao.update_user_info(uid,client_os_ver =x_os_int,choice_petid = res["pet_id"])
             logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
         else:
             logging.error("GetBaseInfo, error, req:%s res:%s", self.dump_req(),res)

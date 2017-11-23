@@ -71,6 +71,8 @@ class ChoosePet(HelperHandler):
                 if old_pet_id > 0:
                     yield pet_dao.update_pet_info(old_pet_id, choice = 0)
             yield pet_dao.update_pet_info(pet_id, choice = 1)
+            user_dao = self.settings["user_dao"]
+            yield user_dao.update_user_info(uid, choice_petid = pet_id)
             res = yield get_base_info(pet_dao, uid, pet_id)
         except Exception, e:
             logging.warning("ChoosePet,uid:%d imei:%s error, %s %s", uid, imei, self.dump_req(),

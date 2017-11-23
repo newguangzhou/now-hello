@@ -82,17 +82,17 @@ class UserMongoDAO(MongoDAOBase):
         yield self.submit(_callback)
 
     @gen.coroutine
-    def add_device(self, uid, imei, role):
+    def add_device(self, uid, pet_id, imei, role):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[user_def.USER_DATABASE][user_def.USER_INFOS_TB]
-            tb.update_one({"uid":uid}, {"$addToSet":{"imei":imei,"role":role}})
+            tb.update_one({"uid":uid}, {"$addToSet":{"dev_list":{"imei":imei,"pet_id":pet_id,"role":role}}})
         yield self.submit(_callback)
 
     @gen.coroutine
     def remove_device(self, uid, imei):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[user_def.USER_DATABASE][user_def.USER_INFOS_TB]
-            tb.update_one({"uid":uid}, {"$pull":{"dev_list":{"$elemMatch":{"imei":imei}}}})
+            tb.update_one({"uid":uid}, {"$pull":{"dev_list":{"imei":imei}}})
         yield self.submit(_callback)
 
     @gen.coroutine
