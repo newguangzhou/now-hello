@@ -92,7 +92,7 @@ class UserMongoDAO(MongoDAOBase):
     def remove_device(self, uid, imei):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[user_def.USER_DATABASE][user_def.USER_INFOS_TB]
-            tb.update_one({"uid":uid}, {"$pull":{"imei":imei}})
+            tb.update_one({"uid":uid}, {"$pull":{"dev_list":{"$elemMatch":{"imei":imei}}}})
         yield self.submit(_callback)
 
     @gen.coroutine
