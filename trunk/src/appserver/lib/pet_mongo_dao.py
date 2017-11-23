@@ -127,8 +127,19 @@ class PetMongoDAO(MongoDAOBase):
             cursor = tb.find({"uid":uid, "choice":1}, qcols )
             if cursor.count() > 0:
                 return cursor[0]
-            cursor = tb.find({"uid": uid}, qcols )
+            return None
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
+    @gen.coroutine
+    def set_default_pet(self, uid ):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            cursor = tb.find({"uid": uid,"choice":1} )
+            if cursor > 0:
+                return cursor[0]
             #有绑定宠物，但是没有设置choice
+            cursor = tb.find({"uid": uid} )
             if cursor.count() >0 :
                 res = tb.update_one({"pet_id": cursor[0]["pet_id"]}, {"$set": {"choice":1}})
                 if res.modified_count > 0 : 
@@ -137,9 +148,9 @@ class PetMongoDAO(MongoDAOBase):
                     return None
             else:
                 return None
-
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
+
 
 
     @gen.coroutine
