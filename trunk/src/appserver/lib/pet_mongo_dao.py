@@ -139,15 +139,14 @@ class PetMongoDAO(MongoDAOBase):
             if cursor > 0:
                 return cursor[0]
             #有绑定宠物，但是没有设置choice
-            cursor = tb.find({"uid": uid} )
-            if cursor.count() >0 :
+            cursor = tb.find({"uid": uid} ,{"pet_id"})
+            if cursor.count() > 0 :
                 res = tb.update_one({"pet_id": cursor[0]["pet_id"]}, {"$set": {"choice":1}})
                 if res.modified_count > 0 : 
                     return cursor[0]
                 else:
                     return None
-            else:
-                return None
+            return None
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
 

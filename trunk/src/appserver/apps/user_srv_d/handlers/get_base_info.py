@@ -43,7 +43,7 @@ def get_base_info(pet_dao,uid, pet_id):
         if not info or pet_id <= 0:
             logging.warning("GetBaseInfo in pet dao, not found,uid:%d pet_id:%d",
                             uid, pet_id)
-            #res["status"] = error_codes.EC_PET_NOT_EXIST
+            res["status"] = error_codes.EC_PET_NOT_EXIST
             #raise gen.Return(res)
         else:
             res["pet_id"] = pet_id
@@ -100,11 +100,13 @@ class GetBaseInfo(HelperHandler):
             res["status"] = error_codes.EC_USER_NOT_LOGINED
         else:
             res = yield get_base_info(pet_dao, uid, pet_id)
-            if not res:
+            if res["status"] == error_codes.EC_PET_NOT_EXIST:
                 yield pet_dao.set_default_pet(uid)
                 res = yield get_base_info(pet_dao, uid, pet_id)
+                if res["status"] == error_codes.EC_PET_NOT_EXIST:
+                    res["status"] = error_codes.EC_SUCCESS
         if res["status"] == error_codes.EC_SUCCESS:
-            yield user_dao.update_user_info(uid,client_os_ver =x_os_int,choice_petid = res["pet_id"])
+            yield user_dao.update_user_info(uid,client_os_ver =x_os_int,choice_petid = int(res["pet_id"]))
             logging.debug("GetBaseInfo, success req:%s res:%s", self.dump_req(),res)
         else:
             logging.error("GetBaseInfo, error, req:%s res:%s", self.dump_req(),res)
