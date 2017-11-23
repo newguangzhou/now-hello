@@ -80,7 +80,21 @@ class UserMongoDAO(MongoDAOBase):
                 raise UserMongoDAOException("Inc user jifen error, not found, uid=%u", uid)
         
         yield self.submit(_callback)
-    
+
+    @gen.coroutine
+    def add_device(self, uid, imei, role):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[user_def.USER_DATABASE][user_def.USER_INFOS_TB]
+            tb.update_one({"uid":uid}, {"$addToSet":{"imei":imei,"role":role}})
+        yield self.submit(_callback)
+
+    @gen.coroutine
+    def remove_device(self, uid, imei):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[user_def.USER_DATABASE][user_def.USER_INFOS_TB]
+            tb.update_one({"uid":uid}, {"$pull":{"imei":imei}})
+        yield self.submit(_callback)
+
     @gen.coroutine
     def is_user_info_exists(self, uid):
         def _callback(mongo_client, **kwargs):

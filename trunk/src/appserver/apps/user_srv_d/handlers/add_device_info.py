@@ -84,6 +84,7 @@ class AddDeviceInfo(HelperHandler):
             yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie)
             user_dao = self.settings["user_dao"]
             yield user_dao.update_user_info(uid, client_os_ver = x_os_int)
+            yield user_dao.add_device(uid,imei,'m')
         except pymongo.errors.DuplicateKeyError, e:
             logging.error("AddDeviceInfo,uid:%d add device:imei:%s pet_id:%d has exist", uid, imei, pet_id)
             res["status"] = error_codes.EC_EXIST
