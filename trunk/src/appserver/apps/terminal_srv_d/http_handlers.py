@@ -10,6 +10,7 @@ import json
 import base64
 from terminal_base import terminal_packets, terminal_commands, terminal_proto
 from test_data import TEST_S2C_COMMAND_DATA
+import datetime
 logger = logging.getLogger(__name__)
 #from urllib import quote
 
@@ -305,6 +306,9 @@ class GetOpLogHandler(tornado.web.RequestHandler):
             start_time = utils.str2datetime(start, "%Y-%m-%d %H:%M:%S")
             if end is not None:
                 end_time = utils.str2datetime(end, "%Y-%m-%d %H:%M:%S")
+            else:
+                end_time = utils.str2datetime(start +  datetime.timedelta(days=1), "%Y-%m-%d %H:%M:%S")
+
         except Exception as e:
             self.write("arg error ")
             return
