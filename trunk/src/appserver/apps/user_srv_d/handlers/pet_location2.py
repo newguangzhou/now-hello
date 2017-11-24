@@ -10,7 +10,7 @@ from tornado.web import asynchronous
 from tornado import gen
 from helper_handler import HelperHandler
 
-
+#测试用接口
 class PetLocation2(HelperHandler):
     @asynchronous
     @gen.coroutine

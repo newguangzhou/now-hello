@@ -5,6 +5,7 @@ import json
 from tornado import ioloop, gen
 
 import global_dao
+from lib.config import *
 
 DEFAULT_CATEGORY = 1  # 默认的系统配置类别
 SC_FILE_BASE_URL = 1  # 系统文件基础url
@@ -205,16 +206,16 @@ class SysConfig:
         dao = global_dao.GlobalDAO.new(**kwargs)
         inst = SysConfig(dao=dao, category=category)
 
-        debug_mode = 1
-        if kwargs.has_key("debug_mode"):
-            debug_mode = kwargs["debug_mode"]
-
-        if debug_mode == 1:
-            SysConfig._local_debug_hack()
-        elif debug_mode == 2:
-            SysConfig._test_debug_hack()
-        elif debug_mode == 0:
-            SysConfig._disable_debug_hack()
+        # debug_mode = 1
+        # if kwargs.has_key("debug_mode"):
+        #     debug_mode = kwargs["debug_mode"]
+        #
+        # if debug_mode == 1:
+        #     SysConfig._local_debug_hack()
+        # elif debug_mode == 2:
+        #     SysConfig._test_debug_hack()
+        # elif debug_mode == 0:
+        #     SysConfig._disable_debug_hack()
 
         if SysConfig._current_inst is None:
             SysConfig._current_inst = inst
@@ -233,6 +234,9 @@ class SysConfig:
             self._category = kwargs["category"]
 
         self._cache = None
+        conf = loadJsonConfig()
+        _CONFIG_ITEMS[SC_FILE_BASE_URL ] =(str, conf["FILE_BASE_URL"], None)
+        #{  # Key is item key, value is (类型，默认值，验证器)
 
     @gen.coroutine
     def open(self):

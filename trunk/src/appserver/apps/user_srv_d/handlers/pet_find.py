@@ -28,7 +28,7 @@ class PetFind(HelperHandler):
         try:
             uid = int(self.get_argument("uid"))
             token = self.get_argument("token")
-            pet_id = int(self.get_argument("pet_id"))
+            pet_id = int(self.get_argument("pet_id", -1))
             find_status = int(self.get_argument("find_status"))
         except Exception, e:
             logging.warning("OnPetFind, invalid args, %s, exception %s",
@@ -48,16 +48,21 @@ class PetFind(HelperHandler):
             return
         info = None
         try:
-            info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei", "sex", "weight", "pet_no_search_status"))
-            if info is None or pet_id != info["pet_id"]:
-                logging.warning("OnPetFind, not found, %s", self.dump_req())
+            if pet_id <= 0:
+                logging.warning("OnPetFind, arg error, pet_id is %d , req:%s", pet_id, self.dump_req())
+                res["status"] = error_codes.EC_PET_NOT_EXIST
+                self.res_and_fini(res)
+                return
+            info = yield pet_dao.get_pet_info_by_petid(pet_id, ("device_imei", "sex", "weight", "pet_no_search_status"))
+            if info is None :
+                logging.warning("OnPetFind,uid:%d pet_id:%d not found, %s", uid, pet_id, self.dump_req())
                 res["status"] = error_codes.EC_PET_NOT_EXIST
                 self.res_and_fini(res)
                 return
 
             imei = info.get("device_imei", None)
             if imei is None:
-                logging.warning("OnPetFind, not found, %s", self.dump_req())
+                logging.warning("OnPetFind,uid:%d, pet_id:%d device_imei not found, %s", uid, pet_id, self.dump_req())
                 res["status"] = error_codes.EC_DEVICE_NOT_EXIST
                 self.res_and_fini(res)
                 return

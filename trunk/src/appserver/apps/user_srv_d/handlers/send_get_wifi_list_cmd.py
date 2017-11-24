@@ -32,15 +32,19 @@ class SendGetWifiListCmd(HelperHandler):
 
         try:
             uid = int(self.get_argument("uid"))
+            pet_id = int(self.get_argument("pet_id", -1))
             token = self.get_argument("token")
             st = yield self.check_token("OnSetTargetStep", res, uid, token)
             if not st:
                return
 
-            info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei"))
+            if pet_id > 0:
+                info = yield pet_dao.get_pet_info_by_petid(pet_id ,("device_imei",))
+            else:
+                info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei"))
             if info is None:
-                logging.warning("SendGetWifiListCmd, not found, %s",
-                                self.dump_req())
+                logging.warning("SendGetWifiListCmd, uid:%d, pet_id:%d not found, %s",
+                                uid, pet_id, self.dump_req())
                 res["status"] = error_codes.EC_PET_NOT_EXIST
                 self.res_and_fini(res)
                 return

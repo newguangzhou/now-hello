@@ -24,6 +24,8 @@ from pet_location import PetLocation
 from pet_location2 import PetLocation2
 from pet_type_info import PetTypeInfo
 from get_pet_info import GetPetInfo
+from get_pet_list import GetPetList
+from choose_pet import ChoosePet
 from add_pet_info import AddPetInfo
 from update_pet_info import UpdatePetInfo
 from get_activity_info import GetActivityInfo
@@ -38,9 +40,8 @@ from set_sim_info import SetSimInfo
 from set_home_wifi import SetHomeWifi
 from set_home_location import SetHomeLocation
 from pet_find import PetFind
-from pet_walk import PetWalk
-from swicth_light import SwitchLight
-from get_switch_light import GetDeviceSwitchLightStatus
+#from pet_walk import PetWalk
+#from swicth_light import SwitchLight
 from get_pet_status import GetPetStatusInfo
 from get_base_info import GetBaseInfo
 from send_get_wifi_list_cmd import SendGetWifiListCmd

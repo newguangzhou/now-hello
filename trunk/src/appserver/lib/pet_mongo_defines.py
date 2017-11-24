@@ -9,6 +9,7 @@ from pymongo.operations import IndexModel
 from lib import utils
 
 PET_DATABASE = "xmq_pet"
+
 """
 宠物基本信息表
 """
@@ -21,6 +22,8 @@ PET_INFOS_TB_INDEXES = [
 _PET_INFOS_TB_ROW_DEFINE = {
     "pet_id": (None, int),  # 宠物全局唯一ID
     "uid": (None, int),
+    "choice": (0, int),  #是否用户选择监控的宠物 1是 0否
+    "init": (0, int),  #初始化是否完成(绑定设备，设置宠物信息，设置home wifi home location)  1是 0否
     "nick": (u"", unicode),
     "logo_url": (u"", unicode),
     "logo_small_url": (u"", unicode),
@@ -121,9 +124,9 @@ def new_pet_location_row():
     tmp = utils.new_mongo_row(PET_LOCATION_TB_ROW_DEFINE)
     return tmp
 
-def new_pet_wifi_row():
-    tmp = utils.new_mongo_row(PET_WIFI_TB_ROW_DEFINE)
-    return tmp
+#def new_pet_wifi_row():
+#    tmp = utils.new_mongo_row(PET_WIFI_TB_ROW_DEFINE)
+#    return tmp
 
 
 def new_pet_infos_row():

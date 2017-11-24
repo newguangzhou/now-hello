@@ -26,6 +26,7 @@ class AddDeviceInfo(HelperHandler):
         pet_dao = self.settings["pet_dao"]
         conf = self.settings["appconfig"]
         terminal_rpc = self.settings["terminal_rpc"]
+        gid_rpc = self.settings["gid_rpc"]
         res = {"status": error_codes.EC_SUCCESS}
         custom_headers = self.custom_headers()
 
@@ -40,12 +41,14 @@ class AddDeviceInfo(HelperHandler):
             token = self.get_argument("token")
             st = yield self.check_token("OnAddDeviceInfo", res, uid, token)
             if not st:
-               return
+                res["status"] = error_codes.EC_INVALID_TOKEN 
+                self.res_and_fini(res)
+                return
 
             imei = self.get_argument("imei")
             device_name = self.get_argument("device_name")
             try:
-                x_os_int=custom_headers.get("x_os_int",23)
+                x_os_int=int(custom_headers.get("x_os_int",23))
             except Exception,e:
                 pass
         except Exception, e:
@@ -75,30 +78,38 @@ class AddDeviceInfo(HelperHandler):
         old_calorie = 0
         if last_device_log is not None:
             old_calorie = last_device_log["calorie"]
+        pet_id = 0
         try:
-            pet_id = int(time.time() * -1000)
-            bind_res = yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie,x_os_int)
+            pet_id = yield gid_rpc.alloc_pet_gid()
+            yield pet_dao.bind_device(uid, imei, pet_id ,bind_day, old_calorie)
+            user_dao = self.settings["user_dao"]
+            yield user_dao.update_user_info(uid, client_os_ver = x_os_int)
+            yield user_dao.add_device(uid,pet_id, imei,'m')
         except pymongo.errors.DuplicateKeyError, e:
+            logging.error("AddDeviceInfo,uid:%d add device:imei:%s pet_id:%d has exist", uid, imei, pet_id)
             res["status"] = error_codes.EC_EXIST
             try:
                 user_dao = self.settings["user_dao"]
-                old_user_info = yield pet_dao.get_pet_info(("uid",),
+                old_user_info = yield pet_dao.get_pet_info(("uid","init"),
                                                            device_imei=imei)
                 if old_user_info is not None:
                     old_uid = old_user_info.get("uid","")
                     if old_uid == "":
-                        logging.warning("AddDeviceInfo, error, imei has exit but can't get the old account: %s",
+                        logging.error("AddDeviceInfo,uid:%d imei:%s has exist,but can't get the old account: %s",
                                         self.dump_req())
                     else:
                         res["old_account"] = ""
                         info = yield user_dao.get_user_info(old_uid, ("phone_num",))
-                        logging.info("AddDeviceInfo,get phone num:%s",info)
-                        old_account=str(info.get("phone_num", ""))
-                        if old_account is not None and len(old_account)>=9:
-                            old_account=old_account[0:3]+"_**_"+old_account[-4:]
-                        res["old_account"] = old_account
+                        if info:
+                            old_account=str(info.get("phone_num", ""))
+                            if old_account is not None and len(old_account)>=9:
+                                old_account=old_account[0:3]+"_**_"+old_account[-4:]
+                            res["old_account"] = old_account
+                            logging.info("AddDeviceInfo,old account uid:%d phone num:%s",old_uid, old_account)
+                        if old_user_info.get("init",0) == 0:
+                            res["status"] = error_codes.EC_BINDDING_IN_PROGRESS #另外进程在绑定,等5分钟再试
             except Exception, ee:
-                logging.warning("AddDeviceInfo, error, imei has exit but can't get the old account: %s %s",
+                logging.error("AddDeviceInfo, imei has exist but can't get the old account: %s %s",
                                 self.dump_req(),
                                 self.dump_exp(ee))
             self.res_and_fini(res)
