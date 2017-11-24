@@ -186,7 +186,7 @@ class SendParamsCommandHandler(tornado.web.RequestHandler):
             device_setting_mgr = self.settings.get("device_setting_mgr",None)
             if  device_setting_mgr is not None:
                 device_setting= device_setting_mgr.get_device_setting(imei)
-		yield device_setting.load()
+                yield device_setting.load()
                 device_setting_str = str(device_setting)
                 #device_setting_new.parse(content)
                 logger.debug("imei:%s old setting:%s ,new setting:%s ", imei, device_setting_str, content)
@@ -195,7 +195,7 @@ class SendParamsCommandHandler(tornado.web.RequestHandler):
                     if ret:
                         ret_str = "send ok"
                         if device_setting.parse(content):
-                        	device_setting.save()
+                            device_setting.save()
                     else:
                         ret_str = "send fail"
                         # res["status"] = error_codes.EC_SEND_CMD_FAIL
