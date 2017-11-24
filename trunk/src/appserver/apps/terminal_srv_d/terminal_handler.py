@@ -628,6 +628,7 @@ class TerminalHandler:
 
     @gen.coroutine
     def _SendBatteryMsg(self, imei, battery, battery_statue, datetime, pet_id, nick):
+        logger.info("_SendBatteryMsg,imei:%s battery_statue:%d pet_id:%d nick:%s",imei,battery_statue, pet_id, nick)
         pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
                                                    device_imei=imei)
         if pet_info is not None:
@@ -639,17 +640,20 @@ class TerminalHandler:
 
             message = ''
             sms_type="low_battery"
+            if user_info is None:
+                logger.warning("uid:%d can't not found in user_info")
+                return
             if battery_statue == 1:
                 #message = "设备低电量，请注意充电"
                 sms_type = "low_battery"
-                if (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                if (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num',None) is not None:
                     self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), "低("+nick+")")
                     return
             elif battery_statue == 2:
                 #message = "设备超低电量，请注意充电"
-                if (int)(pet_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                if (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num',None) is not None:
                     sms_type = "superlow_battery"
-                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低("+nick+")")
+                    self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), "超低("+nick+")")
                     return
 
             msg_android = push_msg.new_now_battery_msg(push_msg.CT_ANDROID, pet_id, nick,
