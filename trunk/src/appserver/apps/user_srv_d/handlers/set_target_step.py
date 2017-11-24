@@ -50,12 +50,15 @@ class SetTargetStep(HelperHandler):
         
 
         try:
-            info = yield pet_dao.get_user_pets(uid, ("pet_id",))
-            if info is None or (pet_id != -1 and pet_id != info["pet_id"]):
-                res["status"] = error_codes.EC_PET_NOT_EXIST
-                self.res_and_fini(res)
-                return          
-            yield pet_dao.update_pet_info(info["pet_id"], target_step=target_step, target_energy = target_energy)
+            if pet_id < 0:
+                info = yield pet_dao.get_user_pets(uid, ("pet_id",))
+                if info is None or info["pet_id"] <= 0:
+                    logging.warning("get pet_id warning. uid:%d info:%s", uid, info)
+                    res["status"] = error_codes.EC_PET_NOT_EXIST
+                    self.res_and_fini(res)
+                    return
+                pet_id = info["pet_id"]
+            yield pet_dao.update_pet_info(pet_id, target_step=target_step, target_energy = target_energy)
         except Exception, e:
             logging.warning("OnSetTargetStep, error, %s %s", self.dump_req(), self.dump_exp(e))
             res["status"] = error_codes.EC_SYS_ERROR

@@ -429,7 +429,7 @@ def calorie_transform(raw_calorie,weight,sex,coefficient=1):
     return result_calorie
 
 #计算高德地图两个经纬度之间的距离
-def haversine(lon1, lat1, lon2, lat2):  # 经度1，纬度1，经度2，纬度2 （十进制度数）
+def haversine(lon1, lat1, lon2, lat2, coefficient=0.667):  # 经度1，纬度1，经度2，纬度2 （十进制度数）
     """ 
     Calculate the great circle distance between two points  
     on the earth (specified in decimal degrees) 
@@ -443,7 +443,7 @@ def haversine(lon1, lat1, lon2, lat2):  # 经度1，纬度1，经度2，纬度2 
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * asin(sqrt(a))
     r = 6371  # 地球平均半径，单位为公里
-    return c * r * 1000
+    return c * r * 1000*coefficient
 
 
 

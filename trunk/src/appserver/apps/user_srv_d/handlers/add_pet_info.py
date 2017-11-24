@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-import json
-import urllib
+#import json
+#import urllib
 import logging
 import datetime
 import traceback
 from lib import error_codes
-from terminal_base import terminal_commands
+#from terminal_base import terminal_commands
 import pymongo
-from tornado.web import asynchronous
+#from tornado.web import asynchronous
 from tornado import gen
 from helper_handler import HelperHandler
 
 from lib import utils
-from lib import sys_config
-from lib.sys_config import SysConfig
-
+#from lib import sys_config
+#from lib.sys_config import SysConfig
+from pymongo import errors
 
 class AddPetInfo(HelperHandler):
     @gen.coroutine
@@ -82,8 +82,8 @@ class AddPetInfo(HelperHandler):
             self.res_and_fini(res)
             return
 
-        pet_id = yield gid_rpc.alloc_pet_gid()
-        info = {"pet_type_id": pet_type_id,"pet_id":pet_id}
+        #pet_id = yield gid_rpc.alloc_pet_gid()
+        info = {"pet_type_id": pet_type_id}
         info["target_energy"] = target_energy
         info["recommend_energy"]=recommend_energy
         if nick is not None:
@@ -104,14 +104,18 @@ class AddPetInfo(HelperHandler):
         # get imei
         try:
 
-            pet_info = yield pet_dao.get_user_pets(uid, ("device_imei",))
+            pet_info = yield pet_dao.get_pet_info(("device_imei","pet_id"), uid=uid, init=0)
+            imei = ""
+            pet_id = 0
             if pet_info is not None:
-                imei = pet_info.get("device_imei")
-                if imei is None:
-                    logging.warning("AddPetInfo, error, %s", self.dump_req())
-                    res["status"] = error_codes.EC_DEVICE_NOT_EXIST
-                    self.res_and_fini(res)
-                    return
+                imei = pet_info.get("device_imei","")
+                pet_id = pet_info.get("pet_id",0)
+            if imei == "" or pet_id == 0:
+                logging.error("AddPetInfo fail, uid:%d, imei:%s , pet_id:%d,  req:%s",
+                                uid,imei, pet_id, self.dump_req())
+                res["status"] = error_codes.EC_DEVICE_NOT_EXIST
+                self.res_and_fini(res)
+                return
         except Exception, e:
             logging.warning("AddPetInfo, error, %s %s", self.dump_req(),
                             self.dump_exp(e))
@@ -120,14 +124,14 @@ class AddPetInfo(HelperHandler):
             return
 
         try:
-            yield pet_dao.update_pet_info_by_uid(uid, **info)
+            yield pet_dao.update_pet_info_by_device(imei, **info)
             res["status"] = error_codes.EC_SUCCESS
         except pymongo.errors.DuplicateKeyError, e:
             res["status"] = error_codes.EC_EXIST
             self.res_and_fini(res)
             return
         except Exception, e:
-            logging.warning("AddPetInfo, error, %s %s", self.dump_req(),
+            logging.warning("AddPetInfo,uid:%d imei:%s error, %s %s", uid, imei, self.dump_req(),
                             self.dump_exp(e))
             res["status"] = error_codes.EC_SYS_ERROR
             self.res_and_fini(res)
@@ -137,7 +141,7 @@ class AddPetInfo(HelperHandler):
         res["recommend_energy_android"]=str(recommend_energy)
 
         # 成功
-        logging.debug("AddPetInfo, success %s", self.dump_req())
+        logging.debug("AddPetInfo,uid:%d imei:%s success %s", uid, imei, self.dump_req())
         self.res_and_fini(res)
 
     def post(self):

@@ -43,25 +43,31 @@ class RemoveDeviceInfo(HelperHandler):
             res["status"] = error_codes.EC_INVALID_ARGS
             self.res_and_fini(res)
             return
-        info = yield pet_dao.get_user_pets(uid, ("pet_id", "device_imei"))
+        info = yield pet_dao.get_pet_info(("pet_id",),device_imei= imei)
         if info is None:
-            res["status"] = error_codes.EC_PET_NOT_EXIST
-            self.res_and_fini(res)
-            return
-        device_imei = info.get("device_imei", None)
-        if device_imei is None:
+            logging.warning("RemoveDeviceInfo, imei:%s not found.", imei)
             res["status"] = error_codes.EC_DEVICE_NOT_EXIST
             self.res_and_fini(res)
             return
 
         try:
             yield pet_dao.unbind_device_imei(info["pet_id"])
+            pet_count = yield pet_dao.get_pet_count(uid)
+            print "uid:",uid,"pet_count:",pet_count
+            res["has_other_dev"] = 1 if pet_count> 0 else 0
+            user_dao = self.settings["user_dao"]
+            yield user_dao.remove_device(uid, imei)  #删除user_info表的dev_list字段
+            ret = yield pet_dao.set_default_pet(uid)
+            if ret:
+                yield user_dao.update_user_info(uid, choice_petid=int(ret["pet_id"]))
+                #res["pet_id"] = int(ret["pet_id"])
         except Exception, e:
-            logging.warning("RemoveDeviceInfo, pet_dao.unbind_device_imei error, %s %s", self.dump_req(),
+            logging.warning("RemoveDeviceInfo, imei:%s unbind_device_imei error, %s %s", imei, self.dump_req(),
                             self.dump_exp(e))
             res["status"] = error_codes.EC_SYS_ERROR
             self.res_and_fini(res)
             return
+
 
         # try:
         #     yield device_dao.unbind_device_imei(device_imei)

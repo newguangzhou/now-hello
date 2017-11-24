@@ -78,6 +78,7 @@ class ServerConnMgr(TCPServer, ServerConnDelegate):
     def on_close(self, conn_id):
         try:
             self._handler.OnClose(conn_id, True)  #
-            del self._conns[conn_id]
+            if self._conns.has_key(conn_id):
+                del self._conns[conn_id]
         except Exception, e:
             logger.exception(e)

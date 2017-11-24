@@ -3,16 +3,11 @@ import threading
 import logging
 import time
 import traceback
-import random
-import json
-import bson
+import datetime
 
 from tornado import ioloop, gen
 
 import pet_mongo_defines as pet_def
-import utils
-
-from sys_config import SysConfig
 import type_defines
 
 import pymongo
@@ -68,7 +63,7 @@ class PetMongoDAO(MongoDAOBase):
         #        "Validate pet infos columns error, invalid column \"%s\"",
         #        exp_col)
 
-        info["pet_id"] = pet_id
+   #     info["pet_id"] = pet_id
 
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
@@ -90,7 +85,19 @@ class PetMongoDAO(MongoDAOBase):
 
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            res = tb.update_one({"uid": uid}, {"$set": info},
+            res = tb.update_many({"uid": uid}, {"$set": info},
+                                upsert=True)
+            return res.modified_count
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
+    @gen.coroutine
+    def update_pet_info_by_device(self, imei, **kwargs):
+        info = kwargs
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"device_imei": imei}, {"$set": info},
                                 upsert=True)
             return res.modified_count
 
@@ -109,6 +116,7 @@ class PetMongoDAO(MongoDAOBase):
     @gen.coroutine
     def get_user_pets(self, uid, cols):
         def _callback(mongo_client, **kwargs):
+            print "get_user_pets:",uid
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
             qcols = {"_id": 0}
             for v in cols:
@@ -116,37 +124,46 @@ class PetMongoDAO(MongoDAOBase):
                     raise PetMongoDAOException(
                         "Unknown pet infos row column \"%s\"", v)
                 qcols[v] = 1
-
-            cursor = tb.find({"uid": uid}, qcols)
-            if cursor.count() <= 0:
-                return None
-            return cursor[0]
-
+            cursor = tb.find({"uid":uid, "choice":1}, qcols )
+            if cursor.count() > 0:
+                return cursor[0]
+            return None
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
 
-    # @gen.coroutine
-    # def get_pet_info(self, pet_id, cols, device_imei=None):
-    #     def _callback(mongo_client, **kwargs):
-    #         tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-    #         qcols = {"_id": 0}
-    #         for v in cols:
-    #             if not pet_def.has_pet_infos_col(v):
-    #                 raise PetMongoDAOException(
-    #                     "Unknown pet infos row column \"%s\"", v)
-    #             qcols[v] = 1
-    #         cond = {}
-    #         if pet_id is not None:
-    #             cond["pet_id"] = pet_id
-    #         if device_imei is not None:
-    #             cond["device_imei"] = device_imei
-    #         cursor = tb.find(cond, qcols)
-    #         if cursor.count() <= 0:
-    #             return None
-    #         return cursor[0]
-    #
-    #     ret = yield self.submit(_callback)
-    #     raise gen.Return(ret)
+    @gen.coroutine
+    def set_default_pet(self, uid ):
+        def _callback(mongo_client, **kwargs):
+            #logging.debug("set_default_pet")
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            cursor = tb.find({"uid": uid,"choice":1} )
+            if cursor.count() > 0:
+                return cursor[0]
+            #有绑定宠物，但是没有设置choice
+            #logging.debug("cursor count:%d", cursor.count())
+            qcols = {"pet_id": 1}
+            cur2 = tb.find({"uid": uid} ,qcols)
+            #logging.debug("cur2 count:%d", cur2.count())
+            if cur2.count() > 0 :
+                res = tb.update_one({"pet_id": cur2[0]["pet_id"]}, {"$set": {"choice":1}})
+                if res.modified_count > 0 : 
+                    return cur2[0]
+                else:
+                    return None
+            return None
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
+
+
+    @gen.coroutine
+    def get_pet_count(self, uid):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            cursor = tb.find({"uid":uid})
+            return cursor.count()
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
 
     @gen.coroutine
     def get_pet_info(self, cols, **kwargs):
@@ -169,14 +186,35 @@ class PetMongoDAO(MongoDAOBase):
         raise gen.Return(ret)
 
     @gen.coroutine
-    def bind_device(self, uid, imei, pet_id,bind_day,old_calorie,x_os_int):
+    def get_pet_info_by_petid(self, pet_id, cols):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            # res = tb.insert_one({"uid": uid,"device_imei": imei,"pet_id":pet_id})
-            info={"device_imei": imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"device_os_int":x_os_int}
-            res=tb.update_one({"uid": uid}, {"$set": info},
-                       upsert=True)
-            logging.info("bind_device:%s, %s", imei, info)
+            qcols = {"_id": 0}
+            for v in cols:
+                if not pet_def.has_pet_infos_col(v):
+                    raise PetMongoDAOException(
+                        "Unknown pet infos row column \"%s\"", v)
+                qcols[v] = 1
+            cursor = tb.find({"pet_id": pet_id}, qcols)
+            if cursor.count() <= 0:
+                return None
+            return cursor[0]
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
+    @gen.coroutine
+    def bind_device(self, uid, imei, pet_id,bind_day,old_calorie):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            cur = datetime.datetime.now()
+            before_5_min = cur - datetime.timedelta(minutes = 5)
+            #删除5分钟前没有初始化完的设备，
+            tb.delete_one({"device_imei":imei,"init":0, "register_date":{"$lt":before_5_min}})
+            print before_5_min
+            info={"uid":uid,"device_imei":imei,"pet_id":pet_id, "bind_day":bind_day,"old_calorie":old_calorie,"init" : 0, "choice":0 ,"register_date":cur}
+            res=tb.insert_one(info)
+            logging.info("bind_device, uid:%d imei:%s, info:%s success", uid, imei, info)
             return res
 
         ret = yield self.submit(_callback)
@@ -323,6 +361,16 @@ class PetMongoDAO(MongoDAOBase):
 
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
+    @gen.coroutine
+    def set_home_wifi_by_imei(self, imei, home_wifi):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"device_imei": imei},
+                                {"$set": {"home_wifi": home_wifi,"common_wifi":[]}})
+            return res
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
 
     @gen.coroutine
     def set_home_location(self, uid, home_location):
@@ -334,23 +382,76 @@ class PetMongoDAO(MongoDAOBase):
 
         ret = yield self.submit(_callback)
         raise gen.Return(ret)
+
+    @gen.coroutine
+    def set_home_location_by_petid(self, pet_id, home_location):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"pet_id": pet_id},
+                                {"$set": {"home_location": home_location}})
+            return res
+
+        ret = yield self.submit(_callback)
+        raise gen.Return(ret)
+
     #设置户外wifi
     @gen.coroutine
     def set_outdoor_wifi(self,uid,outdoor_wifi):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            res = tb.update_one({"uid": uid},
+            res = tb.update_one({"uid": uid,"choice":1},
                                 {"$set": {"outdoor_wifi": outdoor_wifi,"outdoor_in_protected":1}})
             return res
         ret=yield  self.submit(_callback)
         raise gen.Return(ret)
+
+    #设置户外wifi by pet_id
+    @gen.coroutine
+    def set_outdoor_wifi_by_petid(self,pet_id,outdoor_wifi):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"pet_id": pet_id},
+                                {"$set": {"outdoor_wifi": outdoor_wifi,"outdoor_in_protected":1}})
+            return res
+        ret=yield  self.submit(_callback)
+        raise gen.Return(ret)
+
     #户外开关
     @gen.coroutine
     def set_outdoor_on_off(self,uid,outdoor_on_off):
         def _callback(mongo_client, **kwargs):
             tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
-            res = tb.update_one({"uid": uid},
+            res = tb.update_one({"uid": uid,"choice":1},
                                 {"$set": {"outdoor_on_off": outdoor_on_off}})
             return res
         ret=yield  self.submit(_callback)
+        raise gen.Return(ret)
+
+    #户外开关 by pet_id
+    @gen.coroutine
+    def set_outdoor_on_off_by_petid(self, pet_id, outdoor_on_off):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            res = tb.update_one({"pet_id": pet_id},
+                                {"$set": {"outdoor_on_off": outdoor_on_off}})
+            return res
+        ret=yield  self.submit(_callback)
+        raise gen.Return(ret)
+
+    #获取宠物列表
+    @gen.coroutine
+    def get_pet_list(self, uid, cols):
+        def _callback(mongo_client, **kwargs):
+            tb = mongo_client[pet_def.PET_DATABASE][pet_def.PET_INFOS_TB]
+            qcols = {"_id": 0}
+            for v in cols:
+                if not pet_def.has_pet_infos_col(v):
+                    raise PetMongoDAOException(
+                        "Unknown pet infos row column \"%s\"", v)
+                qcols[v] = 1
+            cursor = tb.find({"uid": uid}, qcols)
+            if cursor.count() <= 0:
+                return None
+            return cursor
+        ret = yield self.submit(_callback)
         raise gen.Return(ret)

@@ -54,6 +54,7 @@ class TerminalHandler:
         self.op_log_dao = kwargs.get("op_log_dao", None)
         self.new_device_dao = kwargs.get("new_device_dao", None)
         self.pet_dao = kwargs.get("pet_dao", None)
+        self.user_dao = kwargs.get("user_dao", None)
         self.msg_rpc = kwargs.get("msg_rpc", None)
         self.unreply_msg_mgr = kwargs.get("unreply_msg_mgr", None)
 
@@ -260,7 +261,7 @@ class TerminalHandler:
         # pk.electric_quantity = app_electric_quantity
         pet_info = yield self.pet_dao.get_pet_info(
             ("pet_id", "uid", "home_wifi", "common_wifi", "target_energy",
-             "outdoor_on_off","outdoor_in_protected","outdoor_wifi",
+             "outdoor_on_off","outdoor_in_protected","outdoor_wifi","nick",
              "pet_status","home_location","pet_is_in_home","weight","sex","bind_day","old_calorie"),
             device_imei=pk.imei)
 
@@ -296,6 +297,8 @@ class TerminalHandler:
         radius3 = -1
         station_status = 0#基站信号是否正常  0:正常  1：信号异常(信号差)
         location_info = {}
+        pet_id = 0
+        nick = ""
 
         if pk.location_info.locator_status == terminal_packets.LOCATOR_STATUS_GPS:
 
@@ -365,15 +368,32 @@ class TerminalHandler:
                 yield self.pet_dao.add_location_info(pet_info["pet_id"],
                                                      pk.imei, location_info)
                 uid = pet_info.get("uid", None)
+                pet_id = pet_info.get("pet_id" , -1)
+                nick = pet_info.get("nick","宠物")
                 if uid is not None:
+                    #pet_id,name, latitude, longitude, location_time, radius, locator_status, station_status
                     msg_android = push_msg.new_location_change_msg(
-                        "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                        int(time.mktime(locator_time.timetuple())), radius, locator_status,station_status,
-                        push_msg.CT_ANDROID)
+                        push_msg.CT_ANDROID,
+                        pet_id = pet_id,
+                        name = nick,
+                        latitude =  "%.7f" % lnglat[1],
+                        longitude = "%.7f" % lnglat[0],
+                        location_time = int(time.mktime(locator_time.timetuple())),
+                        radius = radius,
+                        locator_status = locator_status,
+                        station_status = station_status,
+                        )
                     msg_ios = push_msg.new_location_change_msg(
-                        "%.7f" % lnglat[1], "%.7f" % lnglat[0],
-                        int(time.mktime(locator_time.timetuple())), radius,locator_status,station_status,
-                        push_msg.CT_IOS)
+                        push_msg.CT_IOS,
+                        pet_id = pet_id,
+                        name = nick,
+                        latitude =  "%.7f" % lnglat[1],
+                        longitude = "%.7f" % lnglat[0],
+                        location_time = int(time.mktime(locator_time.timetuple())),
+                        radius = radius,
+                        locator_status = locator_status,
+                        station_status = station_status,
+                    )
                     try:
                         yield self.msg_rpc.push_android(uids=str(uid),
                                                         payload=msg_android,
@@ -396,16 +416,16 @@ class TerminalHandler:
             server_recv_time=time_stamp)
 
         battery_status = 0
-        if app_electric_quantity< LOW_BATTERY:
+        if app_electric_quantity<= LOW_BATTERY:
             battery_status = 1
-            if app_electric_quantity < ULTRA_LOW_BATTERY:
+            if app_electric_quantity <= ULTRA_LOW_BATTERY:
                 battery_status = 2
         device_info = yield self.new_device_dao.get_device_info(pk.imei, ("battery_status",))
         # if device_info is not None:
         if not utils.battery_status_isequal(device_info.get("battery_status", 0), battery_status):
             yield self.new_device_dao.update_device_info(pk.imei, **{"battery_status": battery_status})
             yield self._SendBatteryMsg(pk.imei, app_electric_quantity,
-                                       battery_status, now_time)
+                                       battery_status, now_time,pet_id, nick)
         #//add device log
         yield self.new_device_dao.add_device_log(imei=pk.imei, calorie=pk.calorie, location = location_info)
         #add sport info
@@ -481,7 +501,7 @@ class TerminalHandler:
                 if home_location is not None and len(lnglat) != 0:
                     distance = utils.haversine(float(home_location.get("longitude")), float(home_location.get("latitude")),
                                           float(lnglat[0]), float(lnglat[1]))
-                    is_in_home = True if (distance <= radius * 2) else False
+                    is_in_home = True if (distance <= radius) else False
                     pet_is_in_home = pet_info.get("pet_is_in_home", 1)
                     if (pet_is_in_home == 1 and not is_in_home):
                         logging.debug("out-home*-imei:%s,radius:%s,distance:%s", pk.imei, radius, distance)
@@ -607,35 +627,36 @@ class TerminalHandler:
         raise gen.Return(True)
 
     @gen.coroutine
-    def _SendBatteryMsg(self, imei, battery, battery_statue, datetime):
-        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "device_os_int", "mobile_num"),
+    def _SendBatteryMsg(self, imei, battery, battery_statue, datetime, pet_id, nick):
+        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
                                                    device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
+            user_info = yield self.user_dao.get_user_info(uid,("client_os_ver","phone_num"))
 
             message = ''
             sms_type="low_battery"
             if battery_statue == 1:
-                message = "设备低电量，请注意充电"
+                #message = "设备低电量，请注意充电"
                 sms_type = "low_battery"
-                if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "低")
+                if (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                    self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), "低("+nick+")")
                     return
             elif battery_statue == 2:
-                message = "设备超低电量，请注意充电"
-                if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
+                #message = "设备超低电量，请注意充电"
+                if (int)(pet_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
                     sms_type = "superlow_battery"
-                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低")
+                    self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), "超低("+nick+")")
                     return
 
-            msg = push_msg.new_now_battery_msg(
+            msg_android = push_msg.new_now_battery_msg(push_msg.CT_ANDROID, pet_id, nick,
                 utils.date2str(datetime), battery, battery_statue)
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
                 # ios去掉推送
                 # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
@@ -643,21 +664,21 @@ class TerminalHandler:
                 if battery_statue == 1:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
-                                                    desc="追踪器电量低，请及时充电！",
-                                                    payload=msg,
+                                                    desc= nick + " 追踪器电量低，请及时充电！",
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload="追踪器电量低，请及时充电！",
+                                                            payload= nick + " 追踪器电量低，请及时充电！",
                                                             extra=push_msg.extra({"type":"low_battery"})
                                                             )
                 elif battery_statue == 2:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
-                                                    desc="追踪器电量超低，请及时充电！",
-                                                    payload=msg,
+                                                    desc= nick + " 追踪器电量超低，请及时充电！",
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload="追踪器电量超低，请及时充电！",
+                                                            payload=nick + " 追踪器电量超低，请及时充电！",
                                                             extra=push_msg.extra({"type":"superlow_battery"})
                                                             )
 
@@ -878,62 +899,57 @@ class TerminalHandler:
     @gen.coroutine
     def _SendOutdoorInOrOutProtected(self,imei,is_in_protected):
         pet_info = yield self.pet_dao.get_pet_info(
-            ("pet_id", "uid", "nick",  "device_os_int", "mobile_num","outdoor_in_protected"),
+            ("pet_id", "uid", "nick","outdoor_in_protected"),
             device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
+            pet_id = pet_info.get("pet_id", -1)
+            nick=pet_info.get("nick","宠物")
             # outdoor_in_protected=pet_info.get("outdoor_in_protected",0)
             # if(outdoor_in_protected==1 and is_in_protected) or (
             #         outdoor_in_protected==0 and not is_in_protected):
             #     return
             # yield self.pet_dao.update_pet_info(
             #     pet_info["pet_id"], outdoor_in_protected=1 - outdoor_in_protected)
-            msg=push_msg.new_pet_outdoor_out_portected_msg()
             if is_in_protected:
-                msg=push_msg.new_pet_outdoor_in_portected_msg()
+                msg_android=push_msg.new_pet_outdoor_in_portected_msg(push_msg.CT_ANDROID,pet_id, nick)
+                msg_ios =push_msg.new_pet_outdoor_in_portected_msg(push_msg.CT_IOS,pet_id, nick)
+            else:
+                msg_android=push_msg.new_pet_outdoor_out_portected_msg(push_msg.CT_ANDROID, pet_id, nick)
+                msg_ios=push_msg.new_pet_outdoor_out_portected_msg(push_msg.CT_IOS, pet_id, nick)
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
                 # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                 #                                         payload=msg)
             except Exception, e:
                 logger.exception(e)
+            user_info = yield self.user_dao.get_user_info(uid,("phone_num","client_os_ver"))
+
             message=""
             sms_type="outdoor_out_protected"
-            nick=pet_info.get("nick","宠物")
             if is_in_protected:
                 message=nick+"回到户外保护范围。"
                 sms_type="outdoor_in_protected"
             else:
                 message=nick+"脱离户外保护范围，请注意安全。"
                 sms_type="outdoor_out_protected"
-            if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), nick)
+            if user_info is not None and (int)(user_info.get('client_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), nick)
                 return
             try:
-                if is_in_protected:
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
                                                     desc=message,
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
-                                                            extra=push_msg.extra({"type":"outdoor_in_protected"})
-                                                            )
-                else:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    title="小毛球智能提醒",
-                                                    desc=message,
-                                                    payload=msg,
-                                                    pass_through=0)
-                    yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload=message,
-                                                            extra=push_msg.extra({"type":"outdoor_out_protected"})
+                                                            extra=msg_ios
                                                             )
             except Exception, e:
                 logger.exception(e)
@@ -943,7 +959,7 @@ class TerminalHandler:
     @gen.coroutine
     def _SendPetInOrNotHomeMsg(self, imei, is_in_home):
         pet_info = yield self.pet_dao.get_pet_info(
-            ("pet_id", "uid","nick", "pet_is_in_home", "device_os_int", "mobile_num"),
+            ("pet_id", "uid","nick", "pet_is_in_home"),
             device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
@@ -957,12 +973,17 @@ class TerminalHandler:
             # yield self.pet_dao.update_pet_info(
             #     pet_info["pet_id"], pet_is_in_home=1 - pet_is_in_home)
 
-            msg = push_msg.new_pet_not_home_msg()
+            nick=pet_info.get("nick","宠物")
+            pet_id = pet_info.get("pet_id", -1)
             if is_in_home:
-                msg = push_msg.new_pet_in_home_msg()
+                msg_android = push_msg.new_pet_at_home_msg(push_msg.CT_ANDROID, pet_id, nick)
+                msg_ios = push_msg.new_pet_at_home_msg(push_msg.CT_IOS, pet_id, nick)
+            else:
+                msg_android = push_msg.new_pet_leave_home_msg(push_msg.CT_ANDROID, pet_id, nick)
+                msg_ios = push_msg.new_pet_leave_home_msg(push_msg.CT_IOS, pet_id, nick)
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
                 # yield self.msg_rpc.push_ios_useraccount(uids=str(uid),
                 #                                         payload=msg)
@@ -971,43 +992,32 @@ class TerminalHandler:
 
             message = ""
             sms_type="at_home"
-            nick=pet_info.get("nick","宠物")
             if is_in_home:
                 message = nick+"已安全到家。"
                 sms_type="at_home"
             else:
                 message = nick+"可能离家，请确认安全。"
                 sms_type = "out_home"
+            user_info = yield self.user_dao.get_user_info(uid, ("phone_num","client_os_ver"))
+            if not user_info:
+                logger.error("uid of imei:%s not found.", imei)
+                return
 
-            if (int)(pet_info.get('device_os_int', 23)) > 23 and pet_info.get('mobile_num') is not None:
-                self.msg_rpc.send_sms(sms_type,pet_info.get('mobile_num'), nick)
+
+            if (int)(user_info.get('clent_os_ver', 23)) > 23 and user_info.get('phone_num') is not None:
+                self.msg_rpc.send_sms(sms_type,user_info.get('phone_num'), nick)
                 return
 
             try:
-                if (is_in_home):
                     yield self.msg_rpc.push_android(uids=str(uid),
                                                     title="小毛球智能提醒",
                                                     desc=message,
-                                                    payload=msg,
+                                                    payload=msg_android,
                                                     pass_through=0)
                     yield self.msg_rpc.push_ios(uids=str(uid),
                                                             payload=message,
-                                                            extra=push_msg.extra({"type":"in_home"})
+                                                            extra=msg_ios
                                                             )
-                else:
-                    yield self.msg_rpc.push_android(uids=str(uid),
-                                                    title="小毛球智能提醒",
-                                                    desc=message,
-                                                    payload=msg,
-                                                    pass_through=0)
-                    yield self.msg_rpc.push_ios(uids=str(uid),
-                                                            payload=message,
-                                                            extra=push_msg.extra({"type":"out_home"})
-                                                            )
-
-
-
-
             except Exception, e:
                 logger.exception(e)
         else:
@@ -1015,22 +1025,30 @@ class TerminalHandler:
 
     @gen.coroutine
     def _SendOnlineMsg(self, imei, battery, datetime):
-        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
+        pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "nick"),
                                                    device_imei=imei)
         if pet_info is not None:
             uid = pet_info.get("uid", None)
             if uid is None:
                 logger.warning("imei:%s uid not find", imei)
                 return
-            msg = push_msg.new_device_on_line_msg(battery,
+            msg_android = push_msg.new_device_on_line_msg(push_msg.CT_ANDROID,
+                                                  pet_info.get("pet_id",0),
+                                                  pet_info.get("nick","宠物"),
+                                                  battery,
                                                   utils.date2str(datetime))
+            msg_ios = push_msg.new_device_on_line_msg(push_msg.CT_IOS,
+                                                          pet_info.get("pet_id",0),
+                                                          pet_info.get("nick","宠物"),
+                                                          battery,
+                                                          utils.date2str(datetime))
             self.updateDeviceStatus(imei)
 
             try:
                 yield self.msg_rpc.push_android(uids=str(uid),
-                                                payload=msg,
+                                                payload=msg_android,
                                                 pass_through=1)
-                yield self.msg_rpc.push_ios(uids=str(uid), payload=msg,channel=2,
+                yield self.msg_rpc.push_ios(uids=str(uid), payload=msg_ios,channel=2,
                                              extra={"type":"online"}
                                              )
             except Exception, e:
@@ -1060,7 +1078,7 @@ class TerminalHandler:
                 conn = self.conn_mgr.GetConn(conn_id)
                 if conn is not None:
                     conn.close()
-            pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid"),
+            pet_info = yield self.pet_dao.get_pet_info(("pet_id", "uid", "nick"),
                                                        device_imei=imei)
             if pet_info is not None:
                 uid = pet_info.get("uid", None)
@@ -1077,8 +1095,14 @@ class TerminalHandler:
                     location_info = yield self.pet_dao.get_last_location_info(pet_info["pet_id"])
                     if location_info.get("station_status") == 1:
                         offline_reason = 2
-                msg_ios = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_IOS)
-                msg_android = push_msg.new_device_off_line_msg(offline_reason, push_msg.CT_ANDROID)
+                msg_ios = push_msg.new_device_off_line_msg(push_msg.CT_IOS,
+                                                           pet_info.get("pet_id",0),
+                                                           pet_info.get("nick","宠物"),
+                                                           offline_reason)
+                msg_android = push_msg.new_device_off_line_msg( push_msg.CT_ANDROID,
+                                                                pet_info.get("pet_id",0),
+                                                                pet_info.get("nick","宠物"),
+                                                                offline_reason)
                 self.pet_dao.update_pet_info(pet_info["pet_id"],
                                              device_status=0
                                              )

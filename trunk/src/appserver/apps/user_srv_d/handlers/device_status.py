@@ -32,9 +32,9 @@ class DeviceStatus(HelperHandler):
         if not st:
             return
         try:
-            info =yield pet_dao.get_user_pets(uid,("device_imei","device_status"))
-            if imei != info["device_imei"]:
-                logging.warning("device_status, not found, %s",
+            info =yield pet_dao.get_pet_info(("device_status",),uid = uid, device_imei = imei)
+            if info is None:
+                logging.warning("device_status, not found,uid:%d, imei%s, %s",uid, imei,
                                 self.dump_req())
                 res["status"] = error_codes.EC_PET_NOT_EXIST
                 self.res_and_fini(res)

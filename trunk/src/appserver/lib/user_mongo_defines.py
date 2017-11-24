@@ -24,7 +24,10 @@ _USER_INFOS_TB_ROW_DEFINE = {
     "home_wifi": ({}, dict),
     "register_date": (None, datetime.datetime),
     "last_login_date": (None, datetime.datetime),
+    "client_os_ver": (23, int),   #客户端操作系统版本号,IOS=23，ANDROID为实际版本号
     "mod_date": (None, datetime.datetime),
+    "dev_list":(None,list),#绑定设备列表，多对多用 ，格式[{"imei":xxx,"role":"r"},{"imei":xxx,"role":"s"}]
+    "choice_petid":(None,int),   #当前选择设备，多对多用
 }
 
 
@@ -34,6 +37,7 @@ def new_user_infos_row():
     tmp["register_date"] = cur
     tmp["last_login_date"] = cur
     tmp["mod_date"] = cur
+    tmp["client_os_ver"]  = 23
     return tmp
 
 

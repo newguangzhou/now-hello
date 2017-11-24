@@ -47,7 +47,7 @@ class UpdatePetInfo(HelperHandler):
             st = yield self.check_token("OnUpdatePetInfo", res, uid, token)
             if not st:
                 return
-            pet_id = int(self.get_argument("pet_id"))
+            pet_id = int(self.get_argument("pet_id", -1))
             target_energy = float(self.get_argument("target_energy", 0))
             recommend_energy=float(self.get_argument("recommend_energy",0))
             # imei = self.get_argument("imei")
@@ -84,18 +84,23 @@ class UpdatePetInfo(HelperHandler):
             res["status"] = error_codes.EC_INVALID_ARGS
             self.res_and_fini(res)
             return
-        sex_weight_change=None
+        #sex_weight_change=None
         try:
-            pet_info = yield pet_dao.get_user_pets(uid, (
-                "pet_id", "device_imei", "sex", "weight"))
-            if pet_info is None or pet_id != pet_info["pet_id"]:
-                logging.warning("UpdatePetInfo, not found, %s",
-                                self.dump_req())
-                res["status"] = error_codes.EC_PET_NOT_EXIST
-                self.res_and_fini(res)
-                return
-            if sex != pet_info["sex"] or weight !=pet_info["weight"]:
-                sex_weight_change=True
+            if pet_id < 0:
+                pet_info = yield pet_dao.get_user_pets(uid, (
+                    "pet_id", "device_imei", "sex", "weight"))
+                if pet_info is None or pet_info["pet_id"] <= 0:
+                    logging.warning("UpdatePetInfo, uid:%d not found, %s",
+                                    uid, self.dump_req())
+                    res["status"] = error_codes.EC_PET_NOT_EXIST
+                    self.res_and_fini(res)
+                    return
+                pet_id = pet_info["pet_id"]
+            # else:
+            #     pet_info = yield pet_dao.get_pet_info_by_petid(pet_id, (
+            #         "pet_id", "device_imei", "sex", "weight"))
+            # if sex != pet_info["sex"] or weight !=pet_info["weight"]:
+            #     sex_weight_change=True
         except Exception, e:
             logging.warning("UpdatePetInfo, is_pet_id_exist error, %s %s",
                             self.dump_req(), self.dump_exp(e))
