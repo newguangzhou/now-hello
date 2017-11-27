@@ -310,7 +310,7 @@ class GetOpLogHandler(tornado.web.RequestHandler):
                 end_time = start_time + datetime.timedelta(days=1)
 
         except Exception as e:
-            self.render('log.html',host=self.settings["proc_conf"].get("log_host",None))
+            self.render('log.htm',host=self.settings["proc_conf"].get("log_host",None))
             logger.warning("arg error,error:%s", str(e))
             #self.write("arg error ")
             return
