@@ -21,13 +21,13 @@ class DeviceSetting:
     def load(self):
         res = yield self._dao.get_device_info(self._imei, ["setting","update_time"])
         self._setting = res.get("setting","005,0#0#0#0#0##0#0#0#0#5000")
-	logger.debug("imei:%s load setting:%s,self._setting:%s",self._imei, res, self._setting)
+        logger.debug("imei:%s load setting:%s,self._setting:%s",self._imei, res, self._setting)
         if self.parse(self._setting):
-	    logger.debug("imei:%s parse setting:%s success",self._imei, self._setting)
+            logger.debug("imei:%s parse setting:%s success",self._imei, self._setting)
             #traceback.print_stack()
             raise gen.Return(True)
         else:
-	    logger.debug("imei:%s parse setting:%s fail",self._imei, self._setting)
+            logger.debug("imei:%s parse setting:%s fail",self._imei, self._setting)
             raise gen.Return(False)
 
     @gen.coroutine
