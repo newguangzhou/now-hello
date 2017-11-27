@@ -113,7 +113,7 @@ Dockerfile
 *.log
 .idea/
 *.out
-*.html
+*.htm
 tags
 Pipfile
 Pipfile.lock
