@@ -124,6 +124,7 @@ if __name__ == '__main__':
         autoreload=True,
         debug=True,
         broadcastor=broadcastor,
+        proc_conf=proc_conf,
         msg_rpc=msg_rpc,
         unreply_msg_mgr=unreply_msg_mgr,
         device_setting_mgr = device_setting_mgr.DeviceSettingMgr(
