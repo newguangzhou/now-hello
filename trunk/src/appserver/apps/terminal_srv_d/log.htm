@@ -106,7 +106,8 @@
                     var begin_time=$('#begin_time').val();
                     var end_time = $('#end_time').val();
                     var imei = $('#imei').val();
-                    var url = "http://"+$('#select_env').selected().val()+":5052/op_log";
+					var host = $('#select_env').children('option:selected').val()
+                    var url = "http://"+host +":5052/op_log";
                     $.ajax({
                         url: url,
                         type: "get",
@@ -142,7 +143,7 @@
 
 环境： <select title="select env" id="select_env">
     {% for server in servers%}
-    <option value = {{escape(server.ip)}}>{{escape(server.name)}}</option>
+    <option value = {{escape(server["ip"])}}>{{escape(server["name"])}}</option>
 {% end %}
 </select>
 imei：<input title = "imei" type="text" name="imei" id="imei" value="" />
