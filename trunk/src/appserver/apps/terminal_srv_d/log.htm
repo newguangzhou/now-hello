@@ -47,6 +47,9 @@
                 );
             });
             $(document).ready( function() {
+                $("#select_env").change(function () {
+
+                });
                 $("#btn_last_hour").click(function(){
                     var now = new Date();
                     var day = ("0" + now.getDate()).slice(-2);
@@ -103,8 +106,9 @@
                     var begin_time=$('#begin_time').val();
                     var end_time = $('#end_time').val();
                     var imei = $('#imei').val();
+                    var url = "http://"+$('#select_env').selected().val()+":5052/op_log";
                     $.ajax({
-                        url: "http://{{host}}:5052/op_log",
+                        url: url,
                         type: "get",
                         data: {
                             "imei": imei,
@@ -136,6 +140,11 @@
     </head>
 <body>
 
+环境： <select title="select env" id="select_env">
+    {% for server in servers%}
+    <option value = {{escape(server.ip)}}>{{escape(server.name)}}</option>
+{% end %}
+</select>
 imei：<input title = "imei" type="text" name="imei" id="imei" value="" />
 begin time：<input title = "begin" type="text" name="begin_time" id="begin_time" value="" />
 end time：<input title = "end" type="text" name="end_time" id="end_time" value="" />
