@@ -316,6 +316,8 @@ class GetOpLogHandler(tornado.web.RequestHandler):
             #self.write("arg error ")
             return
 
+        self.set_header("Access-Control-Allow-Origin","*")
+
         op_ret = yield op_log_dao.get_log_info(start_time, end_time, imei,
                                                ("imei", "content", "log_time"))
         ret = "<html>"
